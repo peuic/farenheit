@@ -1,9 +1,10 @@
 import { renderHome } from "../templates/home";
 import type { Ctx } from "./context";
+import type { BookWithDownload } from "../../store/types";
 
 export function handleHome(ctx: Ctx): Response {
   const categories = ctx.store.listCategories();
-  const totalBooks = ctx.store.list({}).length;
+  const all = ctx.store.list({});
   const rootBooks = ctx.store.list({
     category: null,
     deviceId: ctx.deviceId,
@@ -12,11 +13,27 @@ export function handleHome(ctx: Ctx): Response {
   const html = renderHome({
     pageTitle: "Farenheit",
     heading: "Farenheit",
-    subHeading: `${totalBooks} ${totalBooks === 1 ? "livro" : "livros"}`,
+    subHeading: buildCountSubHeading(all),
     categories,
     books: rootBooks,
   });
   return htmlResponse(html);
+}
+
+export function buildCountSubHeading(books: BookWithDownload[]): string {
+  const total = books.length;
+  const unsynced = books.filter((b) => !b.onDisk).length;
+  const synced = total - unsynced;
+  const totalLabel = `${total} ${total === 1 ? "livro" : "livros"}`;
+  if (unsynced === 0) return totalLabel;
+  return `${totalLabel} · ${synced} sincronizados · ${unsynced} pendentes`;
+}
+
+export function htmlResponse(html: string, status = 200): Response {
+  return new Response(html, {
+    status,
+    headers: { "Content-Type": "text/html; charset=utf-8" },
+  });
 }
 
 export function htmlResponse(html: string, status = 200): Response {
