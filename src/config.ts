@@ -27,7 +27,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
 
   const portStr = env.PORT ?? "1111";
   const port = Number.parseInt(portStr, 10);
-  if (Number.isNaN(port) || port < 1 || port > 65535) {
+  if (Number.isNaN(port) || port < 0 || port > 65535) {
     throw new Error(`invalid PORT: ${portStr}`);
   }
 
