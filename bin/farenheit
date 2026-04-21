@@ -1,0 +1,230 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Resolve real path (follow symlinks), compute PROJECT_DIR.
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ "$SOURCE" != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+BIN_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+PROJECT_DIR="$(cd "$BIN_DIR/.." && pwd)"
+
+PLIST_SRC="$PROJECT_DIR/launchd/com.farenheit.plist.template"
+PLIST_DST="$HOME/Library/LaunchAgents/com.farenheit.plist"
+LOG_PATH="$PROJECT_DIR/data/farenheit.log"
+LABEL="com.farenheit"
+PORT_DEFAULT=1111
+
+# ---- helpers ----
+
+err() { printf "error: %s\n" "$*" >&2; exit 1; }
+
+bun_path() {
+  if command -v bun >/dev/null 2>&1; then
+    command -v bun
+  elif [[ -x "$HOME/.bun/bin/bun" ]]; then
+    echo "$HOME/.bun/bin/bun"
+  else
+    return 1
+  fi
+}
+
+ensure_bun() {
+  if ! bun_path >/dev/null; then
+    err "bun not found. Install it first:
+  curl -fsSL https://bun.sh/install | bash"
+  fi
+}
+
+plist_exists() { [[ -f "$PLIST_DST" ]]; }
+
+loaded() {
+  launchctl list | awk '{print $3}' | grep -Fxq "$LABEL"
+}
+
+lan_ip() {
+  # prefer wifi (en0), fall back to first non-loopback v4
+  local ip
+  ip="$(ipconfig getifaddr en0 2>/dev/null || true)"
+  if [[ -z "$ip" ]]; then
+    ip="$(ifconfig 2>/dev/null | awk '/inet / && $2 != "127.0.0.1" {print $2; exit}')"
+  fi
+  echo "$ip"
+}
+
+port_from_plist() {
+  if plist_exists; then
+    /usr/libexec/PlistBuddy -c "Print :EnvironmentVariables:PORT" "$PLIST_DST" 2>/dev/null || echo "$PORT_DEFAULT"
+  else
+    echo "$PORT_DEFAULT"
+  fi
+}
+
+service_url() {
+  local ip port
+  ip="$(lan_ip)"
+  port="$(port_from_plist)"
+  if [[ -n "$ip" ]]; then
+    echo "http://$ip:$port"
+  else
+    echo "http://localhost:$port"
+  fi
+}
+
+# ---- subcommands ----
+
+cmd_install() {
+  ensure_bun
+  local bun; bun="$(bun_path)"
+
+  echo "project:   $PROJECT_DIR"
+  echo "bun:       $bun"
+
+  # install deps if missing
+  if [[ ! -d "$PROJECT_DIR/node_modules" ]]; then
+    echo "installing dependencies…"
+    ( cd "$PROJECT_DIR" && "$bun" install )
+  fi
+
+  # run the existing launchd installer (idempotent)
+  BOOKS_DIR="${BOOKS_DIR:-$HOME/Library/Mobile Documents/com~apple~CloudDocs/Livros}" \
+    "$PROJECT_DIR/launchd/install.sh"
+
+  # symlink the CLI into a directory on PATH
+  local target=""
+  for dir in "$HOME/.local/bin" "/usr/local/bin"; do
+    if [[ -w "$dir" ]] || ( [[ "$dir" == "$HOME/.local/bin" ]] && mkdir -p "$dir" 2>/dev/null && [[ -w "$dir" ]] ); then
+      target="$dir/farenheit"
+      break
+    fi
+  done
+  if [[ -z "$target" ]]; then
+    echo
+    echo "couldn't pick a writable dir for a symlink — add this to your shell profile:"
+    echo "  export PATH=\"$BIN_DIR:\$PATH\""
+    echo "or manually symlink:"
+    echo "  sudo ln -sf \"$BIN_DIR/farenheit\" /usr/local/bin/farenheit"
+  else
+    ln -sf "$BIN_DIR/farenheit" "$target"
+    echo "symlinked → $target"
+    case ":$PATH:" in
+      *":$(dirname "$target"):"*) ;;
+      *) echo "note: $(dirname "$target") isn't on your \$PATH — add it in your shell profile." ;;
+    esac
+  fi
+
+  echo
+  cmd_status
+}
+
+cmd_uninstall() {
+  if plist_exists; then
+    launchctl unload "$PLIST_DST" 2>/dev/null || true
+    rm -f "$PLIST_DST"
+    echo "removed $PLIST_DST"
+  fi
+  for dir in "$HOME/.local/bin" "/usr/local/bin"; do
+    if [[ -L "$dir/farenheit" ]]; then
+      rm -f "$dir/farenheit"
+      echo "removed symlink $dir/farenheit"
+    fi
+  done
+}
+
+cmd_start() {
+  plist_exists || err "not installed. Run: farenheit install"
+  launchctl load "$PLIST_DST"
+  echo "started. $(service_url)"
+}
+
+cmd_stop() {
+  plist_exists || err "not installed."
+  launchctl unload "$PLIST_DST" 2>/dev/null || true
+  echo "stopped."
+}
+
+cmd_restart() {
+  plist_exists || err "not installed. Run: farenheit install"
+  launchctl unload "$PLIST_DST" 2>/dev/null || true
+  launchctl load "$PLIST_DST"
+  echo "restarted. $(service_url)"
+}
+
+cmd_status() {
+  if ! plist_exists; then
+    echo "status:    not installed (run: farenheit install)"
+    return
+  fi
+  if loaded; then
+    local pid
+    pid="$(launchctl list | awk -v l="$LABEL" '$3==l {print $1}')"
+    echo "status:    running (pid=$pid)"
+  else
+    echo "status:    stopped"
+  fi
+  echo "url:       $(service_url)"
+  echo "log:       $LOG_PATH"
+  if [[ -f "$LOG_PATH" ]]; then
+    echo
+    echo "— last log lines —"
+    tail -n 8 "$LOG_PATH"
+  fi
+}
+
+cmd_logs() {
+  [[ -f "$LOG_PATH" ]] || err "no log yet at $LOG_PATH"
+  if [[ "${1:-}" == "-f" || "${1:-}" == "--follow" ]]; then
+    tail -f "$LOG_PATH"
+  else
+    tail -n 50 "$LOG_PATH"
+  fi
+}
+
+cmd_open() {
+  local url
+  url="$(service_url)"
+  echo "opening $url"
+  open "$url"
+}
+
+cmd_url() {
+  service_url
+}
+
+cmd_help() {
+  cat <<EOF
+farenheit — local epub server for the Kobo
+
+usage: farenheit <command>
+
+commands:
+  install        set up launchd service and symlink CLI
+  uninstall      remove launchd service and CLI symlink
+  start          start the service
+  stop           stop the service
+  restart        restart the service
+  status         show running state, URL, log tail
+  logs [-f]      print last 50 log lines (or follow with -f)
+  open           open the UI in the Mac browser
+  url            print the LAN URL (handy to copy to the Kobo)
+  help           this text
+EOF
+}
+
+# ---- dispatch ----
+
+case "${1:-help}" in
+  install)    shift; cmd_install "$@" ;;
+  uninstall)  shift; cmd_uninstall "$@" ;;
+  start)      shift; cmd_start "$@" ;;
+  stop)       shift; cmd_stop "$@" ;;
+  restart)    shift; cmd_restart "$@" ;;
+  status)     shift; cmd_status "$@" ;;
+  logs)       shift; cmd_logs "$@" ;;
+  open)       shift; cmd_open "$@" ;;
+  url)        shift; cmd_url "$@" ;;
+  help|-h|--help) cmd_help ;;
+  *) echo "unknown command: $1" >&2; cmd_help; exit 1 ;;
+esac
