@@ -48,6 +48,14 @@ h2 { font-size: 18px; margin: 18px 0 8px; border-bottom: 1px solid #888; padding
 .book-list li.downloaded { opacity: 0.45; }
 .book-list li.downloaded .title::after { content: " ✓"; }
 .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 14px; }
+.icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px;
+  text-decoration: none; color: #111;
+  border-radius: 4px;
+  margin: -6px -8px -6px 0;
+}
+.icon-btn:active { background: #e7e2d4; }
 .search input[type="text"] {
   width: 100%; padding: 12px; font-size: 18px;
   border: 2px solid #222; border-radius: 3px; background: white;

@@ -29,7 +29,9 @@ export function renderHome(o: Opts): string {
   const body = `
 <div class="nav">
   ${o.backHref ? `<a href="${escapeHtml(o.backHref)}">← Voltar</a>` : `<span></span>`}
-  <span><a href="/search">Buscar</a></span>
+  <a class="icon-btn" href="/search" aria-label="Buscar">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+  </a>
 </div>
 <h1>${escapeHtml(o.heading)}</h1>
 ${o.subHeading ? `<p class="sub">${escapeHtml(o.subHeading)}</p>` : ""}
