@@ -16,6 +16,7 @@ function baseBook(overrides: Partial<BookInput> = {}): BookInput {
     coverFilename: null,
     sizeBytes: 1024,
     mtime: 1000,
+    onDisk: true,
     ...overrides,
   };
 }

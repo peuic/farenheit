@@ -42,18 +42,26 @@ ${bookItems}
   return layout(o.pageTitle, body);
 }
 
+const CLOUD_ICON_SVG = `<svg class="cloud-sync" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 10a6 6 0 0 0-11.6-2A4 4 0 0 0 7 16h2"/><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/></svg>`;
+
 function renderBookItem(b: BookWithDownload): string {
   const coverHtml = b.coverFilename
     ? `<img class="cover" src="/book/${b.id}/cover?v=${b.mtime}" alt="">`
     : `<div class="cover placeholder">sem capa</div>`;
   const authorHtml = b.author ? `<div class="author">${escapeHtml(b.author)}</div>` : "";
-  const cls = b.downloadedAt ? "downloaded" : "";
+  const classes = [
+    b.downloadedAt ? "downloaded" : "",
+    !b.onDisk ? "unsynced" : "",
+  ].filter(Boolean).join(" ");
+  const unsyncedBadge = !b.onDisk
+    ? `<span class="badge-unsynced" title="Ainda sincronizando do iCloud">${CLOUD_ICON_SVG}</span>`
+    : "";
   return `
-<li class="${cls}">
+<li class="${classes}">
   <a href="/book/${b.id}">
     ${coverHtml}
     <div class="meta">
-      <div class="title">${escapeHtml(b.title)}</div>
+      <div class="title">${escapeHtml(b.title)} ${unsyncedBadge}</div>
       ${authorHtml}
     </div>
   </a>

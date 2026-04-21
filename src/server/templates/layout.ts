@@ -47,6 +47,8 @@ h2 { font-size: 18px; margin: 18px 0 8px; border-bottom: 1px solid #888; padding
 .book-list .meta .author { color: #555; font-size: 14px; margin-top: 2px; }
 .book-list li.downloaded { opacity: 0.45; }
 .book-list li.downloaded .title::after { content: " ✓"; }
+.book-list li.unsynced .title { color: #666; }
+.badge-unsynced { display: inline-flex; vertical-align: middle; margin-left: 6px; color: #888; }
 .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 14px; }
 .icon-btn {
   display: inline-flex; align-items: center; justify-content: center;
@@ -89,6 +91,16 @@ h2 { font-size: 18px; margin: 18px 0 8px; border-bottom: 1px solid #888; padding
 .download-btn.done {
   background: transparent; color: #333; border: 2px solid #555;
   padding: 16px; font-weight: normal;
+}
+.download-btn.disabled {
+  background: transparent; color: #888; border: 2px dashed #aaa;
+  padding: 16px; font-weight: normal;
+  cursor: not-allowed;
+}
+.warn {
+  background: #fff4e1; border-left: 4px solid #c89a3c;
+  padding: 10px 12px; margin: 12px 0;
+  font-size: 14px; color: #5a441a;
 }
 .empty { color: #666; text-align: center; padding: 40px 0; }
 `;

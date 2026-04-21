@@ -13,7 +13,8 @@ export const SCHEMA_STATEMENTS: string[] = [
     size_bytes      INTEGER NOT NULL,
     mtime           INTEGER NOT NULL,
     added_at        INTEGER NOT NULL,
-    indexed_at      INTEGER NOT NULL
+    indexed_at      INTEGER NOT NULL,
+    on_disk         INTEGER NOT NULL DEFAULT 1
   )`,
   `CREATE INDEX IF NOT EXISTS idx_books_category ON books(category)`,
   `CREATE INDEX IF NOT EXISTS idx_books_added    ON books(added_at DESC)`,
@@ -31,9 +32,18 @@ export const SCHEMA_STATEMENTS: string[] = [
   )`,
 ];
 
+function hasColumn(db: Database, table: string, column: string): boolean {
+  const rows = db.query(`PRAGMA table_info(${table})`).all() as { name: string }[];
+  return rows.some((r) => r.name === column);
+}
+
 export function migrate(db: Database): void {
   db.run("PRAGMA foreign_keys = ON");
   for (const stmt of SCHEMA_STATEMENTS) {
     db.run(stmt);
+  }
+  // Additive migrations — safe to run repeatedly.
+  if (!hasColumn(db, "books", "on_disk")) {
+    db.run("ALTER TABLE books ADD COLUMN on_disk INTEGER NOT NULL DEFAULT 1");
   }
 }

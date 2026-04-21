@@ -23,6 +23,7 @@ const rowToBook = (r: any): Book => ({
   mtime: r.mtime,
   addedAt: r.added_at,
   indexedAt: r.indexed_at,
+  onDisk: Boolean(r.on_disk),
 });
 
 const rowToBookWithDl = (r: any): BookWithDownload => ({
@@ -47,8 +48,8 @@ export class Store {
     this.db.run(
       `
       INSERT INTO books
-        (rel_path, filename, title, author, description, category, cover_filename, size_bytes, mtime, added_at, indexed_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (rel_path, filename, title, author, description, category, cover_filename, size_bytes, mtime, added_at, indexed_at, on_disk)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(rel_path) DO UPDATE SET
         filename       = excluded.filename,
         title          = excluded.title,
@@ -58,7 +59,8 @@ export class Store {
         cover_filename = excluded.cover_filename,
         size_bytes     = excluded.size_bytes,
         mtime          = excluded.mtime,
-        indexed_at     = excluded.indexed_at
+        indexed_at     = excluded.indexed_at,
+        on_disk        = excluded.on_disk
       `,
       [
         input.relPath,
@@ -72,12 +74,20 @@ export class Store {
         input.mtime,
         now,
         now,
+        input.onDisk ? 1 : 0,
       ],
     );
   }
 
   deleteByRelPath(relPath: string): void {
     this.db.run(`DELETE FROM books WHERE rel_path = ?`, [relPath]);
+  }
+
+  getByRelPath(relPath: string): Book | null {
+    const row = this.db
+      .query(`SELECT * FROM books WHERE rel_path = ?`)
+      .get(relPath);
+    return row ? rowToBook(row) : null;
   }
 
   getById(id: number): BookWithDownload | null {
@@ -110,7 +120,7 @@ export class Store {
     const orderSql =
       opts.sort === "title"
         ? "ORDER BY LOWER(b.title) ASC"
-        : "ORDER BY b.added_at DESC";
+        : "ORDER BY b.mtime DESC, b.added_at DESC";
     const limitSql = opts.limit ? `LIMIT ${Number(opts.limit)}` : "";
 
     const join = opts.deviceId

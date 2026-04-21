@@ -8,6 +8,7 @@ export type BookInput = {
   coverFilename: string | null;
   sizeBytes: number;
   mtime: number;
+  onDisk: boolean;
 };
 
 export type Book = BookInput & {

@@ -89,7 +89,40 @@ export class Indexer {
       const hasSubdir = relPath.includes(sep);
       const category = hasSubdir ? firstSegment ?? null : null;
       const filename = basename(fullPath);
-      const mtime = Math.floor(st.mtimeMs);
+      // mtime here = "when did this file appear on disk" — use birthtime (creation)
+      // so the UI sorts by when the user added the book, not by the publisher's
+      // modification date. Fall back to mtime for filesystems without birthtime.
+      const mtime = Math.floor(st.birthtimeMs || st.mtimeMs);
+      // iCloud placeholder detection: materialized files have disk blocks
+      // covering the logical size; placeholders have ~0 blocks.
+      const onDisk = st.size === 0 ? true : (st.blocks * 512) >= st.size * 0.8;
+
+      const existing = this.deps.store.getByRelPath(relPath);
+      if (existing
+          && existing.mtime === mtime
+          && existing.sizeBytes === st.size
+          && existing.onDisk === onDisk) {
+        return; // unchanged — idempotent skip
+      }
+
+      // If the file isn't materialized yet, skip parse (would EDEADLK or
+      // return garbage). Record it with filename as title so it shows up
+      // in the list with an "unsynced" indicator.
+      if (!onDisk) {
+        this.deps.store.upsert({
+          relPath,
+          filename,
+          title: existing?.title ?? filename,
+          author: existing?.author ?? null,
+          description: existing?.description ?? null,
+          category,
+          coverFilename: existing?.coverFilename ?? null,
+          sizeBytes: st.size,
+          mtime,
+          onDisk: false,
+        });
+        return;
+      }
 
       let parseResult;
       try {
@@ -106,6 +139,7 @@ export class Indexer {
           coverFilename: null,
           sizeBytes: st.size,
           mtime,
+          onDisk,
         });
         return;
       }
@@ -135,6 +169,7 @@ export class Indexer {
         coverFilename,
         sizeBytes: st.size,
         mtime,
+        onDisk,
       };
       this.deps.store.upsert(input);
     } catch (e) {

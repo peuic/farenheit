@@ -19,6 +19,13 @@ export function renderBook(b: BookWithDownload, backHref: string): string {
   const btnClass = b.downloadedAt ? "download-btn done" : "download-btn";
   const btnText = b.downloadedAt ? "⬇  Baixar novamente" : "⬇  Baixar no Kobo";
 
+  const unsyncedWarn = !b.onDisk
+    ? `<div class="warn">⏳ Este livro ainda está sincronizando do iCloud. Aguarde alguns instantes.</div>`
+    : "";
+  const downloadHtml = b.onDisk
+    ? `<a class="${btnClass}" href="/book/${b.id}/download">${btnText}</a>`
+    : `<span class="download-btn disabled">⏳  Aguardando sincronização</span>`;
+
   const body = `
 <div class="nav">
   <a href="${escapeHtml(backHref)}">← Voltar</a>
@@ -29,8 +36,9 @@ export function renderBook(b: BookWithDownload, backHref: string): string {
   <h1>${escapeHtml(b.title)}</h1>
   ${b.author ? `<div class="author">${escapeHtml(b.author)}</div>` : ""}
   <div class="filemeta">${filemetaParts.join(" · ")}</div>
+  ${unsyncedWarn}
   ${descriptionHtml}
-  <a class="${btnClass}" href="/book/${b.id}/download">${btnText}</a>
+  ${downloadHtml}
 </div>
 `;
   return layout(b.title, body);
