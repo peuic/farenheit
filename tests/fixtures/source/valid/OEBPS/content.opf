@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookID" version="3.0">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:identifier id="BookID">urn:uuid:valid-1</dc:identifier>
+    <dc:title>Valid Title</dc:title>
+    <dc:creator>Valid Author</dc:creator>
+    <dc:description>A valid test description.</dc:description>
+    <dc:language>en</dc:language>
+    <meta name="cover" content="cover-image"/>
+  </metadata>
+  <manifest>
+    <item id="cover-image" href="cover.png" media-type="image/png" properties="cover-image"/>
+    <item id="nav"         href="nav.xhtml"  media-type="application/xhtml+xml" properties="nav"/>
+    <item id="ch1"         href="ch1.xhtml"  media-type="application/xhtml+xml"/>
+  </manifest>
+  <spine>
+    <itemref idref="ch1"/>
+  </spine>
+</package>
