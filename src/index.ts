@@ -4,6 +4,11 @@ import { Store } from "./store/store";
 import { Indexer } from "./indexer/indexer";
 import { startServer } from "./server/server";
 
+for (const level of ["log", "info", "warn", "error"] as const) {
+  const orig = console[level].bind(console);
+  console[level] = (...args: unknown[]) => orig(new Date().toISOString(), ...args);
+}
+
 function findLanIps(): string[] {
   const out: string[] = [];
   const ifs = networkInterfaces();
