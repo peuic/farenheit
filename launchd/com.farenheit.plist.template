@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.farenheit</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>__BUN_PATH__</string>
+    <string>run</string>
+    <string>__PROJECT_DIR__/src/index.ts</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>__PROJECT_DIR__</string>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>StandardOutPath</key>
+  <string>__PROJECT_DIR__/data/farenheit.log</string>
+  <key>StandardErrorPath</key>
+  <string>__PROJECT_DIR__/data/farenheit.log</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>BOOKS_DIR</key>
+    <string>__BOOKS_DIR__</string>
+    <key>PORT</key>
+    <string>1111</string>
+    <key>DATA_DIR</key>
+    <string>__PROJECT_DIR__/data</string>
+  </dict>
+</dict>
+</plist>
