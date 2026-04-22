@@ -34,7 +34,7 @@ export function renderHome(o: Opts): string {
       ? renderGroupedByLetter(o.books, (b) => b.title)
       : o.sort === "author"
         ? renderGroupedByLetter(o.books, (b) => b.author ?? b.title)
-        : `<ul class="book-grid">${o.books.map(renderBookItem).join("")}</ul>`;
+        : `<ul class="book-list">${o.books.map(renderBookItem).join("")}</ul>`;
 
   const backLink = o.backHref
     ? `<a class="back" href="${escapeHtml(o.backHref)}">todos</a>`
@@ -116,7 +116,7 @@ function renderGroupedByLetter(
     <span class="rule"></span>
     <span class="count">${items.length}</span>
   </div>
-  <ul class="book-grid">${items.map(renderBookItem).join("")}</ul>
+  <ul class="book-list">${items.map(renderBookItem).join("")}</ul>
 </section>`;
     })
     .join("");
@@ -126,7 +126,7 @@ function renderGroupedByLetter(
 
 function renderBookItem(b: BookWithDownload): string {
   const coverHtml = b.coverFilename
-    ? `<img class="cover" src="/book/${b.id}/cover?v=${b.mtime}" alt="" loading="lazy">`
+    ? `<img class="cover" src="/book/${b.id}/cover?v=${b.mtime}" alt="" loading="lazy" width="44" height="66">`
     : `<div class="cover placeholder">sem capa</div>`;
   const authorHtml = b.author ? `<div class="author">${escapeHtml(b.author)}</div>` : "";
   const classes = [
@@ -136,13 +136,13 @@ function renderBookItem(b: BookWithDownload): string {
 
   return `
 <li class="${classes}">
+  <span class="marker" aria-hidden="true"></span>
   <a href="/book/${b.id}">
-    <div class="cover-wrap">
-      ${coverHtml}
-      <span class="marker" aria-hidden="true"></span>
+    ${coverHtml}
+    <div class="meta">
+      <div class="title">${escapeHtml(b.title)}</div>
+      ${authorHtml}
     </div>
-    <div class="title">${escapeHtml(b.title)}</div>
-    ${authorHtml}
   </a>
 </li>`;
 }

@@ -23,7 +23,7 @@ export function renderSearchPage(query: string, results: BookWithDownload[]): st
 
   const resultsBlock = results.length
     ? `<div class="tally"><strong>${results.length}</strong> ${results.length === 1 ? "resultado" : "resultados"}</div>
-       <ul class="book-grid" style="margin-top:18px">
+       <ul class="book-list" style="margin-top:18px">
          ${results.map(renderResultItem).join("")}
        </ul>`
     : `<div class="empty">Nenhum livro com “${escapeHtml(query)}”.</div>`;
@@ -33,7 +33,7 @@ export function renderSearchPage(query: string, results: BookWithDownload[]): st
 
 function renderResultItem(b: BookWithDownload): string {
   const coverHtml = b.coverFilename
-    ? `<img class="cover" src="/book/${b.id}/cover?v=${b.mtime}" alt="" loading="lazy">`
+    ? `<img class="cover" src="/book/${b.id}/cover?v=${b.mtime}" alt="" loading="lazy" width="44" height="66">`
     : `<div class="cover placeholder">sem capa</div>`;
   const authorHtml = b.author ? `<div class="author">${escapeHtml(b.author)}</div>` : "";
   const classes = [
@@ -42,13 +42,13 @@ function renderResultItem(b: BookWithDownload): string {
   ].filter(Boolean).join(" ");
   return `
 <li class="${classes}">
+  <span class="marker" aria-hidden="true"></span>
   <a href="/book/${b.id}">
-    <div class="cover-wrap">
-      ${coverHtml}
-      <span class="marker" aria-hidden="true"></span>
+    ${coverHtml}
+    <div class="meta">
+      <div class="title">${escapeHtml(b.title)}</div>
+      ${authorHtml}
     </div>
-    <div class="title">${escapeHtml(b.title)}</div>
-    ${authorHtml}
   </a>
 </li>`;
 }
