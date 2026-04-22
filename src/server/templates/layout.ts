@@ -211,12 +211,20 @@ a { color: var(--ink); text-decoration: none; }
 }
 
 /* ————— BOOK GRID ————— */
+/* Explicit column counts — old WebKit (Kobo browser) doesn't handle
+   auto-fill+minmax and collapses to a single column. */
 .book-grid {
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 26px 16px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px 12px;
   margin-bottom: 32px;
+}
+@media (max-width: 380px) {
+  .book-grid { grid-template-columns: repeat(3, 1fr); gap: 20px 10px; }
+}
+@media (min-width: 760px) {
+  .book-grid { grid-template-columns: repeat(6, 1fr); gap: 24px 14px; }
 }
 .book-grid li { position: relative; }
 .book-grid a {
@@ -271,8 +279,8 @@ a { color: var(--ink); text-decoration: none; }
 .book-grid li.unsynced .marker::before { content: "⊙"; color: var(--fade); }
 .book-grid li:not(.downloaded):not(.unsynced) .marker { display: none; }
 .book-grid .title {
-  margin-top: 10px;
-  font-size: 14px;
+  margin-top: 8px;
+  font-size: 12px;
   line-height: 1.25;
   color: var(--ink);
   display: -webkit-box;
@@ -282,13 +290,19 @@ a { color: var(--ink); text-decoration: none; }
   max-height: 2.5em;
 }
 .book-grid .author {
-  margin-top: 3px;
-  font-size: 12px;
+  margin-top: 2px;
+  font-size: 11px;
   font-style: italic;
   color: var(--fade);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.book-grid .marker {
+  top: 4px; right: 4px;
+  min-width: 20px; height: 20px;
+  font-size: 11px;
+  line-height: 18px;
 }
 .book-grid li.downloaded .title { color: var(--fade); }
 .book-grid li.unsynced .title { color: var(--fade); font-style: italic; }
