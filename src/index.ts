@@ -39,7 +39,6 @@ async function main() {
   console.log(`[farenheit] scan done in ${Date.now() - t0}ms`);
 
   indexer.watch();
-  indexer.startPeriodicRefresh(); // re-check unsynced every 2 min (iCloud silent materialization)
 
   const server = startServer({
     config,
