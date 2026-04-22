@@ -60,13 +60,13 @@ describe("server routes", () => {
     rmSync(dataDir, { recursive: true, force: true });
   });
 
-  test("GET / returns HTML with books and category", async () => {
+  test("GET / returns HTML with books", async () => {
     const r = await fetch(baseUrl);
     const body = await r.text();
     expect(r.status).toBe(200);
     expect(r.headers.get("content-type")).toContain("text/html");
     expect(body).toContain("Farenheit");
-    expect(body).toContain("Ficcao");
+    expect(body).toContain("Valid Title");
   });
 
   test("GET / sets device cookie on first visit", async () => {

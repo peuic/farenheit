@@ -1,8 +1,4 @@
-import {
-  renderHome,
-  PAGE_SIZE,
-  buildLetterIndex,
-} from "../templates/home";
+import { renderHome, PAGE_SIZE, buildLetterIndex } from "../templates/home";
 import { htmlResponse, buildTallyHtml, parseSort, parsePage } from "./home";
 import type { Ctx } from "./context";
 
@@ -31,7 +27,6 @@ export function handleCategory(ctx: Ctx, categoryName: string, url: URL): Respon
 
   const html = renderHome({
     pageTitle: `${categoryName} — Farenheit`,
-    overline: "Categoria",
     heading: categoryName,
     tallyHtml: buildTallyHtml(books),
     sort,

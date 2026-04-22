@@ -7,88 +7,63 @@ export const PAGE_SIZE = 10;
 
 type Opts = {
   pageTitle: string;
-  overline: string;
-  heading: string;
-  tallyHtml?: string;                              // raw HTML
+  heading: string;                                 // category name OR "" for home
   sort: SortKey;
   sortBasePath: string;                            // "/" or "/c/Ficcao"
-  backHref?: string;
-  categories?: CategoryCount[];
+  backHref?: string;                               // "/" for category page
+  categories?: CategoryCount[];                    // (unused in topbar layout)
   books: BookWithDownload[];                       // already paginated
   page: number;
   totalPages: number;
-  letterIndex?: Record<string, number> | null;     // letter → page (null = no alphanav)
+  letterIndex?: Record<string, number> | null;
+  tallyHtml?: string;                              // compact count + retry
 };
 
-const SEARCH_ICON = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>`;
+const SEARCH_ICON = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>`;
 
 export function renderHome(o: Opts): string {
-  const categoriesHtml = (o.categories ?? []).length
-    ? `<nav class="categories" aria-label="Categorias">
-         ${o.categories!.map(c =>
-           `<a href="/c/${encodeURIComponent(c.name)}">${escapeHtml(c.name)} · ${c.count}</a>`
-         ).join("")}
-       </nav>`
-    : "";
+  const sortLink = (key: SortKey, label: string) => {
+    const href = pageUrl(o.sortBasePath, key, 1);
+    const cls = o.sort === key ? "active" : "";
+    return `<a class="${cls}" href="${href}">${label}</a>`;
+  };
 
-  const sortBarHtml = renderSortBar(o.sort, o.sortBasePath);
+  const primaryLeft = o.backHref
+    ? `<a class="back" href="${escapeHtml(o.backHref)}">todos</a>
+       <span class="heading">${escapeHtml(o.heading)}</span>`
+    : `<span class="brand">Farenheit</span>
+       <span class="heading"></span>`;
+
+  const topbar = `
+<header class="topbar">
+  <div class="line primary">
+    ${primaryLeft}
+    <span class="icons">
+      <a class="icon-btn" href="/search" aria-label="Buscar">${SEARCH_ICON}</a>
+    </span>
+  </div>
+  <div class="line meta">
+    ${o.tallyHtml ? `<span class="count">${o.tallyHtml}</span>` : ""}
+    <span class="sort">
+      ${sortLink("recent", "recente")}
+      ${sortLink("title", "título")}
+      ${sortLink("author", "autor")}
+    </span>
+  </div>
+</header>`;
 
   const alphanavHtml = o.letterIndex
     ? renderAlphanav(o.letterIndex, o.sortBasePath, o.sort)
     : "";
 
   const booksHtml = o.books.length === 0
-    ? `<div class="empty">Nenhum livro por aqui.</div>`
+    ? `<div class="empty" style="flex:1;display:flex;flex-direction:column;justify-content:center">Nenhum livro por aqui.</div>`
     : `<ul class="book-list fill">${o.books.map(renderBookItem).join("")}</ul>`;
 
   const pagerHtml = renderPager(o.page, o.totalPages, o.sortBasePath, o.sort);
 
-  const backLink = o.backHref
-    ? `<a class="back" href="${escapeHtml(o.backHref)}">todos</a>`
-    : `<span></span>`;
-
-  const body = `
-<header class="masthead">
-  <div class="brand">Farenheit</div>
-  ${backLink}
-  <a class="icon-btn" href="/search" aria-label="Buscar">${SEARCH_ICON}</a>
-</header>
-
-<section class="title-block">
-  <div class="overline">${escapeHtml(o.overline)}</div>
-  <h1>${escapeHtml(o.heading)}</h1>
-  ${o.tallyHtml ? `<div class="tally">${o.tallyHtml}</div>` : ""}
-</section>
-
-<form class="search-inline" method="get" action="/search" role="search">
-  <input type="text" name="q" placeholder="buscar por título ou autor…" autocomplete="off">
-</form>
-
-${categoriesHtml}
-${sortBarHtml}
-${alphanavHtml}
-${booksHtml}
-${pagerHtml}
-`;
+  const body = `${topbar}${alphanavHtml}${booksHtml}${pagerHtml}`;
   return layout(o.pageTitle, body);
-}
-
-function renderSortBar(sort: SortKey, basePath: string): string {
-  const link = (key: SortKey, label: string) => {
-    // Switching sort always drops the page back to 1.
-    const href = pageUrl(basePath, key, 1);
-    const cls = sort === key ? "active" : "";
-    return `<a class="${cls}" href="${href}">${label}</a>`;
-  };
-  return `
-<div class="sortbar">
-  <span class="label">Ordenar por</span>
-  <span class="options">
-    ${link("recent", "recente")}
-    ${link("title", "título")}
-    ${link("author", "autor")}
-  </span>
-</div>`;
 }
 
 function renderAlphanav(
@@ -98,9 +73,9 @@ function renderAlphanav(
 ): string {
   const cells: string[] = [];
   for (const L of ALPHABET) {
-    const page = letterIndex[L];
-    cells.push(page !== undefined
-      ? `<a href="${pageUrl(basePath, sort, page)}">${L}</a>`
+    const p = letterIndex[L];
+    cells.push(p !== undefined
+      ? `<a href="${pageUrl(basePath, sort, p)}">${L}</a>`
       : `<span aria-hidden="true">${L}</span>`);
   }
   const hashPage = letterIndex["#"];
@@ -116,22 +91,21 @@ function renderPager(
   basePath: string,
   sort: SortKey,
 ): string {
-  if (totalPages <= 1) return "";
+  // Always render the pager so it sticks to the bottom even on single-page
+  // results — gives the layout a consistent footer across refreshes.
   const prevHref = page > 1 ? pageUrl(basePath, sort, page - 1) : null;
   const nextHref = page < totalPages ? pageUrl(basePath, sort, page + 1) : null;
-
   const prev = prevHref
     ? `<a class="pager-btn prev" href="${prevHref}">← anterior</a>`
     : `<span class="pager-btn prev disabled" aria-hidden="true">← anterior</span>`;
   const next = nextHref
     ? `<a class="pager-btn next" href="${nextHref}">próximo →</a>`
     : `<span class="pager-btn next disabled" aria-hidden="true">próximo →</span>`;
-
   return `
 <nav class="pager" aria-label="Paginação">
   ${prev}
   <span class="pager-label">
-    <strong>${page}</strong><span class="pager-of">de</span><strong>${totalPages}</strong>
+    <strong>${page}</strong><span class="pager-of">de</span><strong>${Math.max(1, totalPages)}</strong>
   </span>
   ${next}
 </nav>`;
@@ -139,7 +113,7 @@ function renderPager(
 
 function renderBookItem(b: BookWithDownload): string {
   const coverHtml = b.coverFilename
-    ? `<img class="cover" src="/book/${b.id}/cover?v=${b.mtime}" alt="" loading="lazy" width="44" height="66">`
+    ? `<img class="cover" src="/book/${b.id}/cover?v=${b.mtime}" alt="" loading="lazy" width="42" height="63">`
     : `<div class="cover placeholder">sem capa</div>`;
   const authorHtml = b.author ? `<div class="author">${escapeHtml(b.author)}</div>` : "";
   const classes = [
@@ -159,7 +133,7 @@ function renderBookItem(b: BookWithDownload): string {
 </li>`;
 }
 
-// ——— helpers (exported so routes can build letter→page index) ———
+// ——— helpers ———
 
 export function pageUrl(basePath: string, sort: SortKey, page: number): string {
   const params: string[] = [];

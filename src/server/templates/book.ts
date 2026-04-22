@@ -33,11 +33,14 @@ export function renderBook(b: BookWithDownload, backHref: string): string {
   }
 
   const body = `
-<div class="page-narrow">
-  <nav class="nav" aria-label="Navegação">
+<header class="topbar">
+  <div class="line primary">
     <a class="back" href="${escapeHtml(backHref)}">voltar</a>
-    <a href="/">Farenheit</a>
-  </nav>
+    <span class="heading">Livro</span>
+    <span class="icons"><a class="icon-btn" href="/" aria-label="Home">§</a></span>
+  </div>
+</header>
+<div class="page-narrow">
   <article class="detail">
     ${coverHtml}
     <h1>${escapeHtml(b.title)}</h1>

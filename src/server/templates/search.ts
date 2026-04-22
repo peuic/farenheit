@@ -8,35 +8,40 @@ export function renderSearchPage(
   page: number,
   totalPages: number,
 ): string {
+  const topbar = `
+<header class="topbar">
+  <div class="line primary">
+    <a class="back" href="/">voltar</a>
+    <span class="heading">Buscar</span>
+    <span class="icons"></span>
+  </div>
+</header>`;
+
   const form = `
 <div class="page-narrow">
-  <nav class="nav" aria-label="Navegação">
-    <a class="back" href="/">voltar</a>
-    <a href="/">Farenheit</a>
-  </nav>
-  <section class="title-block">
-    <div class="overline">Buscar</div>
-    <h1>título ou autor</h1>
-  </section>
-  <form class="search" method="get" action="/search">
+  <div class="overline">Buscar</div>
+  <h1>título ou autor</h1>
+  <form class="search-form" method="get" action="/search">
     <input type="text" name="q" value="${escapeHtml(query)}" placeholder="digite aqui…" autofocus>
     <button type="submit">Buscar</button>
   </form>
 `;
 
   if (!query) {
-    return layout("Buscar — Farenheit", form + `</div>`);
+    return layout("Buscar — Farenheit", topbar + form + `</div>`);
   }
 
   const resultsBlock = totalResults === 0
     ? `<div class="empty">Nenhum livro com “${escapeHtml(query)}”.</div>`
-    : `<div class="tally"><strong>${totalResults}</strong> ${totalResults === 1 ? "resultado" : "resultados"}</div>
-       <ul class="book-list" style="margin-top:18px">
+    : `<div class="count" style="font-size:12px;color:var(--fade);margin-bottom:8px">
+         <strong style="color:var(--ink);font-style:italic;font-size:14px">${totalResults}</strong> ${totalResults === 1 ? "resultado" : "resultados"}
+       </div>
+       <ul class="book-list">
          ${pageResults.map(renderResultItem).join("")}
        </ul>
        ${renderPager(query, page, totalPages)}`;
 
-  return layout(`Busca: ${query}`, form + resultsBlock + `</div>`);
+  return layout(`Busca: ${query}`, topbar + form + resultsBlock + `</div>`);
 }
 
 function renderPager(query: string, page: number, totalPages: number): string {
@@ -54,7 +59,7 @@ function renderPager(query: string, page: number, totalPages: number): string {
     ? `<a class="pager-btn next" href="${mk(page + 1)}">próximo →</a>`
     : `<span class="pager-btn next disabled" aria-hidden="true">próximo →</span>`;
   return `
-<nav class="pager" aria-label="Paginação">
+<nav class="pager" aria-label="Paginação" style="margin-top:16px">
   ${prev}
   <span class="pager-label">
     <strong>${page}</strong><span class="pager-of">de</span><strong>${totalPages}</strong>
@@ -65,7 +70,7 @@ function renderPager(query: string, page: number, totalPages: number): string {
 
 function renderResultItem(b: BookWithDownload): string {
   const coverHtml = b.coverFilename
-    ? `<img class="cover" src="/book/${b.id}/cover?v=${b.mtime}" alt="" loading="lazy" width="44" height="66">`
+    ? `<img class="cover" src="/book/${b.id}/cover?v=${b.mtime}" alt="" loading="lazy" width="42" height="63">`
     : `<div class="cover placeholder">sem capa</div>`;
   const authorHtml = b.author ? `<div class="author">${escapeHtml(b.author)}</div>` : "";
   const classes = [

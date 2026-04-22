@@ -11,33 +11,25 @@ export function handleHome(ctx: Ctx, url: URL): Response {
   const sort = parseSort(url.searchParams.get("sort"));
   const rawPage = parsePage(url.searchParams.get("page"));
 
-  const categories = ctx.store.listCategories();
   const allBooks = ctx.store.list({ sort, deviceId: ctx.deviceId });
-  const rootBooks = ctx.store.list({
-    category: null,
-    deviceId: ctx.deviceId,
-    sort,
-  });
 
-  const totalPages = Math.max(1, Math.ceil(rootBooks.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(allBooks.length / PAGE_SIZE));
   const page = Math.min(Math.max(1, rawPage), totalPages);
   const offset = (page - 1) * PAGE_SIZE;
-  const pageBooks = rootBooks.slice(offset, offset + PAGE_SIZE);
+  const pageBooks = allBooks.slice(offset, offset + PAGE_SIZE);
 
   const letterIndex = sort === "title"
-    ? buildLetterIndex(rootBooks, PAGE_SIZE, (b) => b.title)
+    ? buildLetterIndex(allBooks, PAGE_SIZE, (b) => b.title)
     : sort === "author"
-      ? buildLetterIndex(rootBooks, PAGE_SIZE, (b) => b.author ?? b.title)
+      ? buildLetterIndex(allBooks, PAGE_SIZE, (b) => b.author ?? b.title)
       : null;
 
   const html = renderHome({
     pageTitle: "Farenheit",
-    overline: "Biblioteca · iCloud",
-    heading: "Farenheit",
+    heading: "",
     tallyHtml: buildTallyHtml(allBooks),
     sort,
     sortBasePath: "/",
-    categories,
     books: pageBooks,
     page,
     totalPages,
@@ -59,10 +51,9 @@ export function parsePage(raw: string | null): number {
 export function buildTallyHtml(books: BookWithDownload[]): string {
   const total = books.length;
   const unsynced = books.filter((b) => !b.onDisk).length;
-  const synced = total - unsynced;
   const totalLabel = `<strong>${total}</strong> ${total === 1 ? "livro" : "livros"}`;
   if (unsynced === 0) return totalLabel;
-  return `${totalLabel}<span class="sep">·</span>${synced} sincronizados<span class="sep">·</span>${unsynced} pendentes<a class="retry-link" href="/sync/retry">tentar novamente</a>`;
+  return `${totalLabel} · ${unsynced} pend. <a class="retry" href="/sync/retry" aria-label="Tentar sincronizar">↻</a>`;
 }
 
 export function htmlResponse(html: string, status = 200): Response {
