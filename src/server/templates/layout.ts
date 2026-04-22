@@ -211,7 +211,9 @@ a { color: var(--ink); text-decoration: none; }
 .book-list li.downloaded .meta .title { color: var(--fade); }
 .book-list li.unsynced   .meta .title { color: var(--fade); font-style: italic; }
 
-/* Fill mode — distribute 10 rows uniformly between topbar and pager. */
+/* Fill mode — distribute 10 rows uniformly between topbar and pager.
+   Sized for 6" e-readers: Clara Color 1072×1448, Kindle 11 1024×1448
+   (logical viewport ≈ 600–800 CSS px). */
 .book-list.fill {
   flex: 1 1 auto;
   display: flex;
@@ -220,12 +222,19 @@ a { color: var(--ink); text-decoration: none; }
 .book-list.fill li {
   flex: 1 1 0;
   display: flex;
-  min-height: 56px;
+  min-height: 60px;
 }
 .book-list.fill li a {
   width: 100%;
   min-height: 0;
+  padding: 6px 12px 6px 28px;
 }
+.book-list.fill .cover {
+  width: 46px;
+  height: 69px;
+}
+.book-list.fill .meta .title { font-size: 15px; }
+.book-list.fill .meta .author { font-size: 12px; }
 
 /* ═════════════ PAGER (sticks to bottom via body flex) ═════════════ */
 .pager {
