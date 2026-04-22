@@ -191,23 +191,24 @@ div.cover.placeholder {
 }
 .meta .title {
   font-size: 15px;
+  font-weight: bold;
   line-height: 1.25;
   color: #1a1714;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 3px;
+  margin-bottom: 4px;
 }
 .meta .author {
-  font-size: 12px;
+  font-size: 14px;
   font-style: italic;
-  color: #6b5f4f;
+  color: #3e362d;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-li.downloaded .meta .title { color: #6b5f4f; }
-li.unsynced   .meta .title { color: #6b5f4f; font-style: italic; }
+li.downloaded .meta .title { color: #6b5f4f; font-weight: normal; }
+li.unsynced   .meta .title { color: #6b5f4f; font-style: italic; font-weight: normal; }
 
 /* ═════════════ PAGER (natural block flow, not fixed) ═════════════ */
 table.pager {
