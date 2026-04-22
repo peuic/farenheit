@@ -3,7 +3,7 @@ import type { BookWithDownload, CategoryCount } from "../../store/types";
 
 export type SortKey = "recent" | "title" | "author";
 
-export const PAGE_SIZE = 10;
+export const PAGE_SIZE = 5;
 
 type Opts = {
   pageTitle: string;
