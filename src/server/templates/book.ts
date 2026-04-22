@@ -3,7 +3,7 @@ import type { BookWithDownload } from "../../store/types";
 
 export function renderBook(b: BookWithDownload, backHref: string): string {
   const coverHtml = b.coverFilename
-    ? `<img class="cover-big" src="/book/${b.id}/cover?v=${b.mtime}" alt="" loading="lazy">`
+    ? `<img class="cover-big" src="/book/${b.id}/cover?v=${b.mtime}" alt="">`
     : `<div class="cover-big placeholder">sem capa</div>`;
 
   const specs = [
@@ -25,33 +25,32 @@ export function renderBook(b: BookWithDownload, backHref: string): string {
 
   let downloadHtml: string;
   if (!b.onDisk) {
-    downloadHtml = `<a class="download-btn retry" href="/book/${b.id}/sync-retry">Tentar sincronizar</a>`;
+    downloadHtml = `<a class="download-btn retry" href="/book/${b.id}/sync-retry"><span class="mark">↻</span>Tentar sincronizar</a>`;
   } else if (b.downloadedAt) {
-    downloadHtml = `<a class="download-btn done" href="/book/${b.id}/download">Baixar novamente</a>`;
+    downloadHtml = `<a class="download-btn done" href="/book/${b.id}/download"><span class="mark">✓</span>Baixar novamente</a>`;
   } else {
-    downloadHtml = `<a class="download-btn" href="/book/${b.id}/download">Baixar no Kobo</a>`;
+    downloadHtml = `<a class="download-btn" href="/book/${b.id}/download"><span class="mark">❖</span>Baixar no Kobo</a>`;
   }
 
-  const body = `
-<header class="topbar">
-  <div class="line primary">
-    <a class="back" href="${escapeHtml(backHref)}">voltar</a>
-    <span class="heading">Livro</span>
-    <span class="icons"><a class="icon-btn" href="/" aria-label="Home">§</a></span>
-  </div>
-</header>
+  const topbar = `
+<table class="topbar-main"><tr>
+  <td class="col-left"><a class="back" href="${escapeHtml(backHref)}"><span class="back-arrow">←</span>voltar</a></td>
+  <td class="col-center"><span class="heading">Livro</span></td>
+  <td class="col-right"><a class="icon-btn" href="/" aria-label="Home"><span class="brand-mark">§</span></a></td>
+</tr></table>`;
+
+  const body = `${topbar}
 <div class="page-narrow">
   <article class="detail">
     ${coverHtml}
     <h1>${escapeHtml(b.title)}</h1>
-    ${b.author ? `<div class="byline">${escapeHtml(b.author)}</div>` : ""}
+    ${b.author ? `<div class="byline">— ${escapeHtml(b.author)} —</div>` : ""}
     <div class="specs">${specs}</div>
     ${unsyncedWarn}
     ${descriptionHtml}
     ${downloadHtml}
   </article>
-</div>
-`;
+</div>`;
   return layout(b.title, body);
 }
 

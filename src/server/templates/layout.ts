@@ -7,6 +7,12 @@ export function escapeHtml(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
+/* Layout philosophy:
+ *   The Kobo browser runs ancient WebKit. Flex/grid/aspect-ratio are
+ *   unreliable. Everything below uses ONLY: block, inline-block, float,
+ *   and HTML tables for multi-column alignment. No media queries.
+ */
+
 const BASE_CSS = `
 :root {
   --paper: #f5efe0;
@@ -18,275 +24,233 @@ const BASE_CSS = `
   --hair: #c9bfa8;
   --ember: #b84318;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; }
-html, body, input, button {
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #f5efe0;
+  color: #1a1714;
   font-family: Charter, "Iowan Old Style", "Hoefler Text", "Palatino Linotype", Palatino, Georgia, serif;
-  font-variant-numeric: oldstyle-nums;
-  -webkit-font-smoothing: antialiased;
-}
-body {
-  background: var(--paper);
-  color: var(--ink);
   font-size: 16px;
   line-height: 1.35;
-  min-height: 100vh;
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
 }
-a { color: var(--ink); text-decoration: none; }
+a { color: #1a1714; text-decoration: none; }
 
-/* ═════════════ TOPBAR (compact 2-line header) ═════════════ */
-.topbar {
-  flex: 0 0 auto;
-  padding: 6px 14px 4px;
-  border-bottom: 1px solid var(--hair);
+/* ═════════════ TOPBAR ═════════════ */
+table.topbar-main, table.topbar-meta, table.alphanav, table.pager {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
 }
-.topbar .line {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+table.topbar-main {
+  border-bottom: 1px solid #c9bfa8;
 }
-.topbar .line.primary { min-height: 30px; }
-.topbar .line.meta    { min-height: 22px; padding-top: 2px; }
-.topbar .brand {
-  font-style: italic;
-  font-size: 17px;
+table.topbar-main td {
+  padding: 6px 12px;
+  vertical-align: middle;
+  height: 36px;
 }
-.topbar .brand::before {
-  content: "§";
-  color: var(--ember);
-  font-style: normal;
-  margin-right: 5px;
-}
-.topbar .heading {
-  flex: 1;
+table.topbar-main td.col-left  { text-align: left;   width: 30%; }
+table.topbar-main td.col-center{ text-align: center; }
+table.topbar-main td.col-right { text-align: right;  width: 30%; }
+
+.brand { font-style: italic; font-size: 17px; color: #1a1714; }
+.brand-mark { color: #b84318; font-style: normal; margin-right: 5px; }
+
+.back { color: #6b5f4f; font-size: 13px; font-style: italic; }
+.back-arrow { font-style: normal; margin-right: 2px; }
+
+.heading {
   font-size: 12px;
-  color: var(--fade);
+  color: #6b5f4f;
   text-transform: uppercase;
   letter-spacing: 0.16em;
-  text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: block;
 }
-.topbar .back {
-  color: var(--fade);
-  font-size: 13px;
-  font-style: italic;
-}
-.topbar .back::before { content: "← "; }
-.topbar .icons { margin-left: auto; display: flex; gap: 2px; }
-.topbar .icon-btn {
+
+.icon-btn {
+  display: inline-block;
   width: 30px;
   height: 30px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--ink);
+  line-height: 30px;
+  text-align: center;
+  color: #1a1714;
+  vertical-align: middle;
 }
-.topbar .icon-btn:active { background: var(--paper-warm); }
-.topbar .count { font-size: 12px; color: var(--fade); }
-.topbar .count strong {
-  color: var(--ink);
+
+/* Meta row (count · sort) */
+table.topbar-meta {
+  border-bottom: 1px solid #c9bfa8;
+}
+table.topbar-meta td {
+  padding: 3px 12px 5px;
+  vertical-align: middle;
+  font-size: 12px;
+  color: #6b5f4f;
+  height: 24px;
+}
+table.topbar-meta td.col-left  { text-align: left; }
+table.topbar-meta td.col-right { text-align: right; }
+
+.count strong {
+  color: #1a1714;
   font-weight: normal;
   font-style: italic;
   font-size: 14px;
   margin-right: 2px;
 }
-.topbar .retry {
-  color: var(--ember);
+.retry {
+  color: #b84318;
   margin-left: 4px;
   text-decoration: underline;
-  text-underline-offset: 2px;
   font-style: italic;
   font-size: 12px;
 }
-.topbar .sort {
-  margin-left: auto;
-  display: flex;
-  gap: 8px;
-  font-size: 12px;
+
+.sort a {
+  color: #6b5f4f;
   font-style: italic;
+  margin-left: 8px;
 }
-.topbar .sort a { color: var(--fade); }
-.topbar .sort a.active {
-  color: var(--ink);
+.sort a.active {
+  color: #1a1714;
   text-decoration: underline;
-  text-underline-offset: 2px;
 }
 
-/* ═════════════ ALPHANAV (compact letter strip) ═════════════ */
-.alphanav {
-  flex: 0 0 auto;
-  display: flex;
-  flex-wrap: wrap;
-  padding: 0 6px;
-  border-bottom: 1px solid var(--hair);
+/* ═════════════ ALPHANAV ═════════════ */
+table.alphanav {
+  border-bottom: 1px solid #c9bfa8;
 }
-.alphanav a, .alphanav span {
-  flex: 1 1 0;
-  min-width: 20px;
-  min-height: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+table.alphanav td {
+  text-align: center;
+  vertical-align: middle;
+  height: 28px;
   font-style: italic;
   font-size: 12px;
 }
-.alphanav a { color: var(--ink); }
-.alphanav span { color: var(--hair); }
-.alphanav a:active { background: var(--paper-warm); }
+table.alphanav td a { color: #1a1714; display: block; padding: 6px 0; }
+table.alphanav td .empty { color: #c9bfa8; display: block; padding: 6px 0; }
 
-/* ═════════════ BOOK LIST ═════════════ */
-.book-list {
+/* ═════════════ BOOK LIST (fixed-height rows, float cover) ═════════════ */
+ul.book-list {
   list-style: none;
+  margin: 0;
+  padding: 0;
+  display: block;
 }
-.book-list li {
-  border-bottom: 1px solid var(--hair);
+ul.book-list li {
+  display: block;
+  height: 96px;
+  border-bottom: 1px solid #c9bfa8;
   position: relative;
-}
-.book-list li:last-child { border-bottom: 0; }
-.book-list a {
-  display: flex;
-  gap: 12px;
-  padding: 6px 14px 6px 30px;
-  color: inherit;
-  align-items: center;
-  min-height: 62px;
-}
-.book-list .marker {
-  position: absolute;
-  left: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 14px;
-  font-family: "Courier New", Courier, monospace;
-  font-size: 12px;
-  color: var(--fade-light);
-  text-align: center;
-}
-.book-list li.downloaded .marker::before { content: "✓"; color: var(--ember); }
-.book-list li.unsynced .marker::before   { content: "⊙"; color: var(--fade-light); }
-.book-list .cover {
-  width: 42px;
-  height: 63px;
-  flex-shrink: 0;
-  object-fit: cover;
-  border: 1px solid var(--hair);
-  background: var(--paper-warm);
-}
-.book-list .cover.placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2px;
-  font-size: 8px;
-  color: var(--fade);
-  font-style: italic;
-  text-align: center;
-  line-height: 1.1;
-}
-.book-list .meta { flex: 1; min-width: 0; }
-.book-list .meta .title {
-  font-size: 15px;
-  line-height: 1.2;
-  color: var(--ink);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
-.book-list .meta .author {
-  font-size: 12px;
-  font-style: italic;
-  color: var(--fade);
-  margin-top: 1px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.book-list li.downloaded .meta .title { color: var(--fade); }
-.book-list li.unsynced   .meta .title { color: var(--fade); font-style: italic; }
-
-/* Fill mode — distribute 10 rows uniformly between topbar and pager.
-   Sized for 6" e-readers: Clara Color 1072×1448, Kindle 11 1024×1448
-   (logical viewport ≈ 600–800 CSS px). */
-.book-list.fill {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-}
-.book-list.fill li {
-  flex: 1 1 0;
-  display: flex;
-  min-height: 60px;
-}
-.book-list.fill li a {
-  width: 100%;
-  min-height: 0;
-  padding: 6px 12px 6px 28px;
-}
-.book-list.fill .cover {
-  width: 46px;
-  height: 69px;
-}
-.book-list.fill .meta .title { font-size: 15px; }
-.book-list.fill .meta .author { font-size: 12px; }
-
-/* ═════════════ PAGER (sticks to bottom via body flex) ═════════════ */
-.pager {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: stretch;
-  border-top: 1px solid var(--hair);
-  min-height: 52px;
-}
-.pager-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  padding: 0 14px;
-  font-size: 13px;
-  font-style: italic;
-  color: var(--ink);
+ul.book-list li a {
+  display: block;
+  height: 96px;
+  padding: 10px 12px 10px 30px;
+  color: #1a1714;
   text-decoration: none;
 }
-.pager-btn.prev { justify-content: flex-start; }
-.pager-btn.next { justify-content: flex-end; }
-.pager-btn:active { background: var(--paper-warm); }
-.pager-btn.disabled { color: var(--fade-light); pointer-events: none; cursor: default; }
-.pager-label {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 14px;
+.marker {
+  position: absolute;
+  left: 8px;
+  top: 40px;
+  width: 16px;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 12px;
+  color: #958873;
+  text-align: center;
+}
+li.downloaded .marker::before { content: "✓"; color: #b84318; }
+li.unsynced   .marker::before { content: "⊙"; color: #958873; }
+img.cover, div.cover {
+  float: left;
+  width: 50px;
+  height: 75px;
+  margin-right: 12px;
+  border: 1px solid #c9bfa8;
+  background: #ece3cd;
+  display: block;
+}
+div.cover.placeholder {
+  text-align: center;
+  padding: 28px 2px 0;
+  font-size: 9px;
+  color: #6b5f4f;
+  font-style: italic;
+  line-height: 1.1;
+}
+.meta {
+  display: block;
+  overflow: hidden; /* contains the floated cover's side */
+  padding-top: 4px;
+}
+.meta .title {
+  font-size: 15px;
+  line-height: 1.25;
+  color: #1a1714;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 3px;
+}
+.meta .author {
+  font-size: 12px;
+  font-style: italic;
+  color: #6b5f4f;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+li.downloaded .meta .title { color: #6b5f4f; }
+li.unsynced   .meta .title { color: #6b5f4f; font-style: italic; }
+
+/* ═════════════ PAGER (natural block flow, not fixed) ═════════════ */
+table.pager {
+  border-top: 1px solid #c9bfa8;
+  margin-top: 0;
+}
+table.pager td {
+  vertical-align: middle;
+  height: 52px;
+  padding: 0;
+}
+table.pager td.col-left  { width: 35%; text-align: left; }
+table.pager td.col-right { width: 35%; text-align: right; }
+table.pager td.col-center{
+  text-align: center;
   font-size: 11px;
-  color: var(--fade);
+  color: #6b5f4f;
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  border-left: 1px solid var(--hair);
-  border-right: 1px solid var(--hair);
-  min-width: 86px;
-  white-space: nowrap;
+  border-left: 1px solid #c9bfa8;
+  border-right: 1px solid #c9bfa8;
 }
-.pager-label strong {
-  color: var(--ink);
+table.pager td.col-center strong {
+  color: #1a1714;
   font-weight: normal;
   font-style: italic;
   font-size: 15px;
-  margin: 0 3px;
   letter-spacing: 0;
+  margin: 0 3px;
 }
-.pager-label .pager-of { color: var(--fade-light); }
+.pager-btn {
+  display: block;
+  padding: 16px 14px;
+  font-size: 13px;
+  font-style: italic;
+  color: #1a1714;
+  text-decoration: none;
+}
+.pager-btn.disabled { color: #958873; }
 
 /* ═════════════ NARROW PAGES (detail / search / 404) ═════════════ */
 .page-narrow {
-  flex: 1 1 auto;
   max-width: 640px;
-  width: 100%;
   margin: 0 auto;
   padding: 14px 18px 24px;
 }
@@ -294,16 +258,16 @@ a { color: var(--ink); text-decoration: none; }
   text-transform: uppercase;
   letter-spacing: 0.18em;
   font-size: 10px;
-  color: var(--fade);
+  color: #6b5f4f;
   margin-bottom: 4px;
 }
 .page-narrow h1 {
   font-style: italic;
   font-weight: normal;
-  font-size: 28px;
+  font-size: 26px;
   line-height: 1.05;
   letter-spacing: -0.01em;
-  margin-bottom: 16px;
+  margin: 0 0 16px;
 }
 
 /* ═════════════ DETAIL ═════════════ */
@@ -311,68 +275,55 @@ a { color: var(--ink); text-decoration: none; }
   display: block;
   width: 180px;
   margin: 4px auto 16px;
-  border: 1px solid var(--hair);
-  background: var(--paper-warm);
+  border: 1px solid #c9bfa8;
+  background: #ece3cd;
 }
 .detail .cover-big.placeholder {
   width: 180px;
   height: 270px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--fade);
+  text-align: center;
+  padding-top: 130px;
+  color: #6b5f4f;
   font-style: italic;
   font-size: 13px;
 }
 .detail h1 {
   font-style: italic;
   font-weight: normal;
-  font-size: 26px;
+  font-size: 24px;
   line-height: 1.1;
   text-align: center;
-  margin-bottom: 4px;
+  margin: 0 0 4px;
 }
 .detail .byline {
   text-align: center;
   font-size: 14px;
-  color: var(--fade);
+  color: #6b5f4f;
   font-style: italic;
   margin-bottom: 12px;
 }
-.detail .byline::before { content: "— "; }
-.detail .byline::after  { content: " —"; }
 .detail .specs {
   text-align: center;
   font-size: 10px;
-  color: var(--fade);
+  color: #6b5f4f;
   text-transform: uppercase;
   letter-spacing: 0.14em;
   padding: 8px 0;
-  border-top: 1px solid var(--hair);
-  border-bottom: 1px solid var(--hair);
+  border-top: 1px solid #c9bfa8;
+  border-bottom: 1px solid #c9bfa8;
   margin-bottom: 14px;
 }
 .detail .specs .sep {
   display: inline-block;
   margin: 0 8px;
-  color: var(--fade-light);
+  color: #958873;
 }
 .detail .description {
   font-size: 14px;
   line-height: 1.55;
-  color: var(--ink-soft);
+  color: #3e362d;
   text-align: justify;
-  hyphens: auto;
-  -webkit-hyphens: auto;
   margin-bottom: 18px;
-}
-.detail .description::first-letter {
-  font-size: 2.4em;
-  float: left;
-  line-height: 0.9;
-  padding: 2px 6px 0 0;
-  font-style: italic;
-  color: var(--ember);
 }
 
 /* ═════════════ BUTTONS ═════════════ */
@@ -383,72 +334,58 @@ a { color: var(--ink); text-decoration: none; }
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.2em;
-  border: 1.5px solid var(--ink);
-  background: var(--paper);
-  color: var(--ink);
+  border: 1.5px solid #1a1714;
+  background: #f5efe0;
+  color: #1a1714;
+  text-decoration: none;
 }
-.download-btn::before {
-  content: "❖";
-  color: var(--ember);
-  margin-right: 8px;
-}
+.download-btn .mark { color: #b84318; margin-right: 8px; }
 .download-btn.done {
-  color: var(--fade);
-  border: 1px dashed var(--hair);
+  color: #6b5f4f;
+  border: 1px dashed #c9bfa8;
   padding: 13px;
 }
-.download-btn.done::before { content: "✓"; color: var(--fade); }
-.download-btn.retry { color: var(--ember); border: 1.5px solid var(--ember); }
-.download-btn.retry::before { content: "↻"; }
-.download-btn:active { background: var(--paper-warm); }
+.download-btn.done .mark { color: #6b5f4f; }
+.download-btn.retry {
+  color: #b84318;
+  border: 1.5px solid #b84318;
+}
 
 /* ═════════════ WARN / EMPTY ═════════════ */
 .warn {
   padding: 10px 12px;
-  border-left: 3px solid var(--ember);
-  background: var(--paper-warm);
+  border-left: 3px solid #b84318;
+  background: #ece3cd;
   font-size: 13px;
   font-style: italic;
-  color: var(--ink-soft);
+  color: #3e362d;
   margin-bottom: 14px;
 }
-.warn::before { content: "⏳ "; font-style: normal; }
 .empty {
   text-align: center;
   padding: 36px 0 20px;
-  color: var(--fade);
+  color: #6b5f4f;
   font-style: italic;
-}
-.empty::before {
-  content: "✦";
-  display: block;
-  font-size: 22px;
-  color: var(--hair);
-  margin-bottom: 8px;
 }
 
 /* ═════════════ SEARCH PAGE INPUT ═════════════ */
-.search-form {
-  margin-bottom: 20px;
-}
+.search-form { margin-bottom: 20px; }
 .search-form input {
   width: 100%;
   padding: 10px 0;
   font-size: 20px;
-  font-family: inherit;
   font-style: italic;
+  font-family: inherit;
   border: 0;
-  border-bottom: 1px solid var(--ink);
+  border-bottom: 1px solid #1a1714;
   background: transparent;
-  color: var(--ink);
-  outline: none;
+  color: #1a1714;
 }
-.search-form input::placeholder { color: var(--fade-light); }
 .search-form button {
   margin-top: 10px;
   padding: 10px 18px;
-  background: var(--ink);
-  color: var(--paper);
+  background: #1a1714;
+  color: #f5efe0;
   border: 0;
   font-size: 11px;
   text-transform: uppercase;
@@ -457,8 +394,6 @@ a { color: var(--ink); text-decoration: none; }
 }
 `;
 
-// Bumped once at process start — visible to confirm the browser is seeing
-// this build (Safari/Kobo caches can lie otherwise).
 const BUILD_STAMP = new Date().toISOString();
 
 export function layout(title: string, bodyHtml: string): string {
