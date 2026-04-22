@@ -12,8 +12,9 @@ export function renderBook(b: BookWithDownload, backHref: string): string {
     b.downloadedAt ? `baixado ${formatRelTime(b.downloadedAt)}` : `adicionado ${formatRelTime(b.addedAt)}`,
   ];
 
-  const descriptionHtml = b.description
-    ? `<div class="description">${escapeHtml(b.description)}</div>`
+  const descriptionText = b.description ? stripHtmlToPlainText(b.description) : "";
+  const descriptionHtml = descriptionText
+    ? `<div class="description">${escapeHtml(descriptionText)}</div>`
     : "";
 
   const btnClass = b.downloadedAt ? "download-btn done" : "download-btn";
@@ -42,6 +43,25 @@ export function renderBook(b: BookWithDownload, backHref: string): string {
 </div>
 `;
   return layout(b.title, body);
+}
+
+// Some epubs store <dc:description> as HTML (e.g. "<p>foo</p><br>bar").
+// fast-xml-parser decodes entities, so we end up with literal HTML in the DB.
+// Strip tags + decode a few common entities the XML parser left alone,
+// collapse whitespace. Rendered output is then safely re-escaped by caller.
+function stripHtmlToPlainText(raw: string): string {
+  return raw
+    .replace(/<\s*br\s*\/?>/gi, " ")
+    .replace(/<\s*\/\s*p\s*>/gi, " ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, "\"")
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function formatSize(bytes: number): string {
