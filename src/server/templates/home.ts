@@ -34,7 +34,7 @@ export function renderHome(o: Opts): string {
       ? renderGroupedByLetter(o.books, (b) => b.title)
       : o.sort === "author"
         ? renderGroupedByLetter(o.books, (b) => b.author ?? b.title)
-        : `<ul class="book-list">${o.books.map(renderBookItem).join("")}</ul>`;
+        : `<ul class="book-grid">${o.books.map(renderBookItem).join("")}</ul>`;
 
   const backLink = o.backHref
     ? `<a class="back" href="${escapeHtml(o.backHref)}">todos</a>`
@@ -112,7 +112,7 @@ function renderGroupedByLetter(
     <span class="rule"></span>
     <span class="count">${items.length}</span>
   </div>
-  <ul class="book-list">${items.map(renderBookItem).join("")}</ul>
+  <ul class="book-grid">${items.map(renderBookItem).join("")}</ul>
 </section>`;
     })
     .join("");
@@ -132,13 +132,13 @@ function renderBookItem(b: BookWithDownload): string {
 
   return `
 <li class="${classes}">
-  <span class="marker" aria-hidden="true"></span>
   <a href="/book/${b.id}">
-    ${coverHtml}
-    <div class="meta">
-      <div class="title">${escapeHtml(b.title)}</div>
-      ${authorHtml}
+    <div class="cover-wrap">
+      ${coverHtml}
+      <span class="marker" aria-hidden="true"></span>
     </div>
+    <div class="title">${escapeHtml(b.title)}</div>
+    ${authorHtml}
   </a>
 </li>`;
 }

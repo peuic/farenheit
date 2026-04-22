@@ -23,7 +23,7 @@ export function renderSearchPage(query: string, results: BookWithDownload[]): st
 
   const resultsBlock = results.length
     ? `<div class="tally"><strong>${results.length}</strong> ${results.length === 1 ? "resultado" : "resultados"}</div>
-       <ul class="book-list" style="margin-top:14px">
+       <ul class="book-grid" style="margin-top:18px">
          ${results.map(renderResultItem).join("")}
        </ul>`
     : `<div class="empty">Nenhum livro com “${escapeHtml(query)}”.</div>`;
@@ -42,13 +42,13 @@ function renderResultItem(b: BookWithDownload): string {
   ].filter(Boolean).join(" ");
   return `
 <li class="${classes}">
-  <span class="marker" aria-hidden="true"></span>
   <a href="/book/${b.id}">
-    ${coverHtml}
-    <div class="meta">
-      <div class="title">${escapeHtml(b.title)}</div>
-      ${authorHtml}
+    <div class="cover-wrap">
+      ${coverHtml}
+      <span class="marker" aria-hidden="true"></span>
     </div>
+    <div class="title">${escapeHtml(b.title)}</div>
+    ${authorHtml}
   </a>
 </li>`;
 }
