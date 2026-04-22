@@ -31,7 +31,7 @@ html, body {
   background: #f5efe0;
   color: #1a1714;
   font-family: Charter, "Iowan Old Style", "Hoefler Text", "Palatino Linotype", Palatino, Georgia, serif;
-  font-size: 16px;
+  font-size: 19px;
   line-height: 1.35;
 }
 a { color: #1a1714; text-decoration: none; }
@@ -46,31 +46,31 @@ table.topbar-main {
   border-bottom: 1px solid #c9bfa8;
 }
 table.topbar-main td {
-  padding: 6px 12px;
+  padding: 8px 14px;
   vertical-align: middle;
-  height: 36px;
+  height: 44px;
 }
 table.topbar-main td.col-left  { text-align: left;   width: 30%; }
 table.topbar-main td.col-center{ text-align: center; }
 table.topbar-main td.col-right { text-align: right;  width: 30%; }
 
-.brand { font-style: italic; font-size: 17px; color: #1a1714; }
-.brand-mark { color: #b84318; font-style: normal; margin-right: 5px; }
+.brand { font-style: italic; font-size: 22px; color: #1a1714; }
+.brand-mark { color: #b84318; font-style: normal; margin-right: 6px; }
 
 .back {
   display: inline-block;
   color: #1a1714;
-  font-size: 12px;
+  font-size: 15px;
   font-style: italic;
   border: 2px solid #1a1714;
-  padding: 4px 10px;
+  padding: 6px 12px;
   text-decoration: none;
   background: #f5efe0;
 }
 .back-arrow { font-style: normal; margin-right: 4px; }
 
 .heading {
-  font-size: 12px;
+  font-size: 14px;
   color: #6b5f4f;
   text-transform: uppercase;
   letter-spacing: 0.16em;
@@ -82,24 +82,25 @@ table.topbar-main td.col-right { text-align: right;  width: 30%; }
 
 .icon-btn {
   display: inline-block;
-  width: 30px;
-  height: 30px;
-  line-height: 30px;
+  width: 36px;
+  height: 36px;
+  line-height: 36px;
   text-align: center;
   color: #1a1714;
   vertical-align: middle;
 }
+.icon-btn svg { vertical-align: middle; }
 
 /* Meta row (count · sort) */
 table.topbar-meta {
   border-bottom: 1px solid #c9bfa8;
 }
 table.topbar-meta td {
-  padding: 3px 12px 5px;
+  padding: 4px 14px 6px;
   vertical-align: middle;
-  font-size: 12px;
+  font-size: 14px;
   color: #6b5f4f;
-  height: 24px;
+  height: 30px;
 }
 table.topbar-meta td.col-left  { text-align: left; }
 table.topbar-meta td.col-right { text-align: right; }
@@ -108,21 +109,22 @@ table.topbar-meta td.col-right { text-align: right; }
   color: #1a1714;
   font-weight: normal;
   font-style: italic;
-  font-size: 14px;
-  margin-right: 2px;
+  font-size: 16px;
+  margin-right: 3px;
 }
 .retry {
   color: #b84318;
-  margin-left: 4px;
+  margin-left: 6px;
   text-decoration: underline;
   font-style: italic;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .sort a {
   color: #6b5f4f;
   font-style: italic;
-  margin-left: 8px;
+  font-size: 14px;
+  margin-left: 10px;
 }
 .sort a.active {
   color: #1a1714;
@@ -136,12 +138,12 @@ table.alphanav {
 table.alphanav td {
   text-align: center;
   vertical-align: middle;
-  height: 28px;
+  height: 36px;
   font-style: italic;
-  font-size: 12px;
+  font-size: 14px;
 }
-table.alphanav td a { color: #1a1714; display: block; padding: 6px 0; }
-table.alphanav td .empty { color: #c9bfa8; display: block; padding: 6px 0; }
+table.alphanav td a { color: #1a1714; display: block; padding: 9px 0; }
+table.alphanav td .empty { color: #c9bfa8; display: block; padding: 9px 0; }
 
 /* ═════════════ BOOK LIST (fixed-height rows, float cover) ═════════════ */
 ul.book-list {
@@ -152,25 +154,25 @@ ul.book-list {
 }
 ul.book-list li {
   display: block;
-  height: 96px;
+  height: 110px;
   border-bottom: 1px solid #c9bfa8;
   position: relative;
   overflow: hidden;
 }
 ul.book-list li a {
   display: block;
-  height: 96px;
-  padding: 10px 12px 10px 30px;
+  height: 110px;
+  padding: 12px 14px 12px 34px;
   color: #1a1714;
   text-decoration: none;
 }
 .marker {
   position: absolute;
   left: 8px;
-  top: 40px;
-  width: 16px;
+  top: 46px;
+  width: 18px;
   font-family: "Courier New", Courier, monospace;
-  font-size: 12px;
+  font-size: 14px;
   color: #958873;
   text-align: center;
 }
@@ -178,17 +180,17 @@ li.downloaded .marker::before { content: "✓"; color: #b84318; }
 li.unsynced   .marker::before { content: "⊙"; color: #958873; }
 img.cover, div.cover {
   float: left;
-  width: 50px;
-  height: 75px;
-  margin-right: 12px;
+  width: 58px;
+  height: 87px;
+  margin-right: 14px;
   border: 1px solid #c9bfa8;
   background: #ece3cd;
   display: block;
 }
 div.cover.placeholder {
   text-align: center;
-  padding: 28px 2px 0;
-  font-size: 9px;
+  padding: 32px 2px 0;
+  font-size: 10px;
   color: #6b5f4f;
   font-style: italic;
   line-height: 1.1;
@@ -196,20 +198,20 @@ div.cover.placeholder {
 .meta {
   display: block;
   overflow: hidden; /* contains the floated cover's side */
-  padding-top: 4px;
+  padding-top: 6px;
 }
 .meta .title {
-  font-size: 15px;
+  font-size: 18px;
   font-weight: bold;
   line-height: 1.25;
   color: #1a1714;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 4px;
+  margin-bottom: 5px;
 }
 .meta .author {
-  font-size: 14px;
+  font-size: 16px;
   font-style: italic;
   color: #3e362d;
   white-space: nowrap;
@@ -226,14 +228,14 @@ table.pager {
 }
 table.pager td {
   vertical-align: middle;
-  height: 52px;
+  height: 60px;
   padding: 0;
 }
 table.pager td.col-left  { width: 35%; text-align: left; }
 table.pager td.col-right { width: 35%; text-align: right; }
 table.pager td.col-center{
   text-align: center;
-  font-size: 11px;
+  font-size: 13px;
   color: #6b5f4f;
   text-transform: uppercase;
   letter-spacing: 0.14em;
@@ -244,14 +246,14 @@ table.pager td.col-center strong {
   color: #1a1714;
   font-weight: normal;
   font-style: italic;
-  font-size: 15px;
+  font-size: 18px;
   letter-spacing: 0;
-  margin: 0 3px;
+  margin: 0 4px;
 }
 .pager-btn {
   display: block;
-  padding: 16px 14px;
-  font-size: 13px;
+  padding: 20px 16px;
+  font-size: 15px;
   font-style: italic;
   color: #1a1714;
   text-decoration: none;
@@ -267,14 +269,14 @@ table.pager td.col-center strong {
 .page-narrow .overline {
   text-transform: uppercase;
   letter-spacing: 0.18em;
-  font-size: 10px;
+  font-size: 12px;
   color: #6b5f4f;
   margin-bottom: 4px;
 }
 .page-narrow h1 {
   font-style: italic;
   font-weight: normal;
-  font-size: 26px;
+  font-size: 30px;
   line-height: 1.05;
   letter-spacing: -0.01em;
   margin: 0 0 16px;
@@ -300,28 +302,28 @@ table.pager td.col-center strong {
 .detail h1 {
   font-style: italic;
   font-weight: normal;
-  font-size: 24px;
+  font-size: 28px;
   line-height: 1.1;
   text-align: center;
-  margin: 0 0 4px;
+  margin: 0 0 6px;
 }
 .detail .byline {
   text-align: center;
-  font-size: 14px;
+  font-size: 16px;
   color: #6b5f4f;
   font-style: italic;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 .detail .specs {
   text-align: center;
-  font-size: 10px;
+  font-size: 12px;
   color: #6b5f4f;
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  padding: 8px 0;
+  padding: 10px 0;
   border-top: 1px solid #c9bfa8;
   border-bottom: 1px solid #c9bfa8;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 .detail .specs .sep {
   display: inline-block;
@@ -329,20 +331,20 @@ table.pager td.col-center strong {
   color: #958873;
 }
 .detail .description {
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.55;
   color: #3e362d;
   text-align: justify;
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 
 /* ═════════════ BUTTONS ═════════════ */
 /* Solid fills only — outlines disappear on E Ink screens. */
 .download-btn {
   display: block;
-  padding: 16px;
+  padding: 18px;
   text-align: center;
-  font-size: 13px;
+  font-size: 15px;
   text-transform: uppercase;
   letter-spacing: 0.2em;
   border: 0;
@@ -369,27 +371,28 @@ table.pager td.col-center strong {
 
 /* ═════════════ WARN / EMPTY ═════════════ */
 .warn {
-  padding: 10px 12px;
+  padding: 12px 14px;
   border-left: 3px solid #b84318;
   background: #ece3cd;
-  font-size: 13px;
+  font-size: 15px;
   font-style: italic;
   color: #3e362d;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 .empty {
   text-align: center;
   padding: 36px 0 20px;
   color: #6b5f4f;
   font-style: italic;
+  font-size: 16px;
 }
 
 /* ═════════════ SEARCH PAGE INPUT ═════════════ */
 .search-form { margin-bottom: 20px; }
 .search-form input {
   width: 100%;
-  padding: 10px 0;
-  font-size: 20px;
+  padding: 12px 0;
+  font-size: 22px;
   font-style: italic;
   font-family: inherit;
   border: 0;
@@ -398,12 +401,12 @@ table.pager td.col-center strong {
   color: #1a1714;
 }
 .search-form button {
-  margin-top: 10px;
-  padding: 10px 18px;
+  margin-top: 12px;
+  padding: 12px 22px;
   background: #1a1714;
   color: #f5efe0;
   border: 0;
-  font-size: 11px;
+  font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.18em;
   font-family: inherit;
