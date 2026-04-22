@@ -3,16 +3,21 @@ import type { BookWithDownload, CategoryCount } from "../../store/types";
 
 export type SortKey = "recent" | "title" | "author";
 
+export const PAGE_SIZE = 10;
+
 type Opts = {
   pageTitle: string;
   overline: string;
   heading: string;
-  tallyHtml?: string;            // raw HTML — caller-escaped
+  tallyHtml?: string;                              // raw HTML
   sort: SortKey;
-  sortBasePath: string;          // "/" or "/c/Ficcao" — determines sort links
+  sortBasePath: string;                            // "/" or "/c/Ficcao"
   backHref?: string;
   categories?: CategoryCount[];
-  books: BookWithDownload[];
+  books: BookWithDownload[];                       // already paginated
+  page: number;
+  totalPages: number;
+  letterIndex?: Record<string, number> | null;     // letter → page (null = no alphanav)
 };
 
 const SEARCH_ICON = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>`;
@@ -28,13 +33,15 @@ export function renderHome(o: Opts): string {
 
   const sortBarHtml = renderSortBar(o.sort, o.sortBasePath);
 
+  const alphanavHtml = o.letterIndex
+    ? renderAlphanav(o.letterIndex, o.sortBasePath, o.sort)
+    : "";
+
   const booksHtml = o.books.length === 0
     ? `<div class="empty">Nenhum livro por aqui.</div>`
-    : o.sort === "title"
-      ? renderGroupedByLetter(o.books, (b) => b.title)
-      : o.sort === "author"
-        ? renderGroupedByLetter(o.books, (b) => b.author ?? b.title)
-        : `<ul class="book-list">${o.books.map(renderBookItem).join("")}</ul>`;
+    : `<ul class="book-list">${o.books.map(renderBookItem).join("")}</ul>`;
+
+  const pagerHtml = renderPager(o.page, o.totalPages, o.sortBasePath, o.sort);
 
   const backLink = o.backHref
     ? `<a class="back" href="${escapeHtml(o.backHref)}">todos</a>`
@@ -59,14 +66,17 @@ export function renderHome(o: Opts): string {
 
 ${categoriesHtml}
 ${sortBarHtml}
+${alphanavHtml}
 ${booksHtml}
+${pagerHtml}
 `;
   return layout(o.pageTitle, body);
 }
 
 function renderSortBar(sort: SortKey, basePath: string): string {
   const link = (key: SortKey, label: string) => {
-    const href = key === "recent" ? basePath : `${basePath}?sort=${key}`;
+    // Switching sort always drops the page back to 1.
+    const href = pageUrl(basePath, key, 1);
     const cls = sort === key ? "active" : "";
     return `<a class="${cls}" href="${href}">${label}</a>`;
   };
@@ -81,47 +91,50 @@ function renderSortBar(sort: SortKey, basePath: string): string {
 </div>`;
 }
 
-function renderGroupedByLetter(
-  books: BookWithDownload[],
-  keyFn: (b: BookWithDownload) => string,
+function renderAlphanav(
+  letterIndex: Record<string, number>,
+  basePath: string,
+  sort: SortKey,
 ): string {
-  const groups = new Map<string, BookWithDownload[]>();
-  for (const b of books) {
-    const letter = firstLetter(keyFn(b));
-    if (!groups.has(letter)) groups.set(letter, []);
-    groups.get(letter)!.push(b);
+  const cells: string[] = [];
+  for (const L of ALPHABET) {
+    const page = letterIndex[L];
+    cells.push(page !== undefined
+      ? `<a href="${pageUrl(basePath, sort, page)}">${L}</a>`
+      : `<span aria-hidden="true">${L}</span>`);
   }
-  const letters = Array.from(groups.keys()).sort(localeCompareLetters);
+  const hashPage = letterIndex["#"];
+  cells.push(hashPage !== undefined
+    ? `<a href="${pageUrl(basePath, sort, hashPage)}">#</a>`
+    : `<span aria-hidden="true">#</span>`);
+  return `<nav class="alphanav" aria-label="Pular para letra">${cells.join("")}</nav>`;
+}
 
-  const navHtml = `
-<nav class="alphanav" aria-label="Jump to letter">
-  ${ALPHABET.map((L) =>
-    groups.has(L)
-      ? `<a href="#L-${L}">${L}</a>`
-      : `<span aria-hidden="true">${L}</span>`,
-  ).join("")}
-  ${groups.has("#")
-    ? `<a href="#L-%23">#</a>`
-    : `<span aria-hidden="true">#</span>`}
-</nav>
-`;
+function renderPager(
+  page: number,
+  totalPages: number,
+  basePath: string,
+  sort: SortKey,
+): string {
+  if (totalPages <= 1) return "";
+  const prevHref = page > 1 ? pageUrl(basePath, sort, page - 1) : null;
+  const nextHref = page < totalPages ? pageUrl(basePath, sort, page + 1) : null;
 
-  const sectionsHtml = letters
-    .map((letter) => {
-      const items = groups.get(letter)!;
-      return `
-<section class="letter-section" id="L-${encodeURIComponent(letter)}">
-  <div class="letter-head">
-    <span class="letter">${letter === "#" ? "#" : letter}</span>
-    <span class="rule"></span>
-    <span class="count">${items.length}</span>
-  </div>
-  <ul class="book-list">${items.map(renderBookItem).join("")}</ul>
-</section>`;
-    })
-    .join("");
+  const prev = prevHref
+    ? `<a class="pager-btn prev" href="${prevHref}">← anterior</a>`
+    : `<span class="pager-btn prev disabled" aria-hidden="true">← anterior</span>`;
+  const next = nextHref
+    ? `<a class="pager-btn next" href="${nextHref}">próximo →</a>`
+    : `<span class="pager-btn next disabled" aria-hidden="true">próximo →</span>`;
 
-  return navHtml + sectionsHtml;
+  return `
+<nav class="pager" aria-label="Paginação">
+  ${prev}
+  <span class="pager-label">
+    <strong>${page}</strong><span class="pager-of">de</span><strong>${totalPages}</strong>
+  </span>
+  ${next}
+</nav>`;
 }
 
 function renderBookItem(b: BookWithDownload): string {
@@ -133,7 +146,6 @@ function renderBookItem(b: BookWithDownload): string {
     b.downloadedAt ? "downloaded" : "",
     !b.onDisk ? "unsynced" : "",
   ].filter(Boolean).join(" ");
-
   return `
 <li class="${classes}">
   <span class="marker" aria-hidden="true"></span>
@@ -147,11 +159,18 @@ function renderBookItem(b: BookWithDownload): string {
 </li>`;
 }
 
+// ——— helpers (exported so routes can build letter→page index) ———
+
+export function pageUrl(basePath: string, sort: SortKey, page: number): string {
+  const params: string[] = [];
+  if (sort !== "recent") params.push(`sort=${sort}`);
+  if (page > 1) params.push(`page=${page}`);
+  return params.length ? `${basePath}?${params.join("&")}` : basePath;
+}
+
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
-function firstLetter(s: string): string {
-  // Strip leading punctuation/articles, pick first alpha char (A-Z uppercased
-  // and diacritic-folded so "Álvaro" lands under A).
+export function firstLetter(s: string): string {
   const trimmed = s.replace(/^[\s"'“”«»¿¡(—–-]+/, "");
   const firstChar = trimmed.charAt(0);
   if (!firstChar) return "#";
@@ -160,8 +179,17 @@ function firstLetter(s: string): string {
   return /^[A-Z]$/.test(up) ? up : "#";
 }
 
-function localeCompareLetters(a: string, b: string): number {
-  if (a === "#") return 1;
-  if (b === "#") return -1;
-  return a.localeCompare(b);
+export function buildLetterIndex(
+  sortedBooks: BookWithDownload[],
+  pageSize: number,
+  keyFn: (b: BookWithDownload) => string,
+): Record<string, number> {
+  const map: Record<string, number> = {};
+  for (let i = 0; i < sortedBooks.length; i++) {
+    const L = firstLetter(keyFn(sortedBooks[i]!));
+    if (map[L] === undefined) {
+      map[L] = Math.floor(i / pageSize) + 1;
+    }
+  }
+  return map;
 }

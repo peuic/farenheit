@@ -452,6 +452,57 @@ a { color: var(--ink); text-decoration: none; }
   letter-spacing: 0.2em;
 }
 
+/* ————— PAGER ————— */
+.pager {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  margin: 28px 0 8px;
+  border-top: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hair);
+}
+.pager-btn {
+  flex: 1;
+  padding: 18px 12px;
+  font-size: 14px;
+  font-style: italic;
+  color: var(--ink);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  min-height: 64px;
+}
+.pager-btn.prev { justify-content: flex-start; }
+.pager-btn.next { justify-content: flex-end; }
+.pager-btn:active { background: var(--paper-warm); }
+.pager-btn.disabled { color: var(--fade-light); pointer-events: none; cursor: default; }
+.pager-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 18px;
+  font-size: 11px;
+  color: var(--fade);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  border-left: 1px solid var(--hair);
+  border-right: 1px solid var(--hair);
+  min-width: 108px;
+  white-space: nowrap;
+}
+.pager-label strong {
+  color: var(--ink);
+  font-weight: normal;
+  font-size: 16px;
+  letter-spacing: 0;
+  margin: 0 4px;
+  font-style: italic;
+}
+.pager-label .pager-of {
+  margin: 0 2px;
+  color: var(--fade-light);
+}
+
 /* ————— EMPTY STATE ————— */
 .empty {
   text-align: center;

@@ -1,7 +1,13 @@
 import { escapeHtml, layout } from "./layout";
 import type { BookWithDownload } from "../../store/types";
 
-export function renderSearchPage(query: string, results: BookWithDownload[]): string {
+export function renderSearchPage(
+  query: string,
+  pageResults: BookWithDownload[],
+  totalResults: number,
+  page: number,
+  totalPages: number,
+): string {
   const form = `
 <nav class="nav" aria-label="Navegação">
   <a class="back" href="/">voltar</a>
@@ -21,14 +27,39 @@ export function renderSearchPage(query: string, results: BookWithDownload[]): st
     return layout("Buscar — Farenheit", form);
   }
 
-  const resultsBlock = results.length
-    ? `<div class="tally"><strong>${results.length}</strong> ${results.length === 1 ? "resultado" : "resultados"}</div>
+  const resultsBlock = totalResults === 0
+    ? `<div class="empty">Nenhum livro com “${escapeHtml(query)}”.</div>`
+    : `<div class="tally"><strong>${totalResults}</strong> ${totalResults === 1 ? "resultado" : "resultados"}</div>
        <ul class="book-list" style="margin-top:18px">
-         ${results.map(renderResultItem).join("")}
-       </ul>`
-    : `<div class="empty">Nenhum livro com “${escapeHtml(query)}”.</div>`;
+         ${pageResults.map(renderResultItem).join("")}
+       </ul>
+       ${renderPager(query, page, totalPages)}`;
 
   return layout(`Busca: ${query}`, form + resultsBlock);
+}
+
+function renderPager(query: string, page: number, totalPages: number): string {
+  if (totalPages <= 1) return "";
+  const mk = (p: number) => {
+    const params = new URLSearchParams();
+    params.set("q", query);
+    if (p > 1) params.set("page", String(p));
+    return `/search?${params.toString()}`;
+  };
+  const prev = page > 1
+    ? `<a class="pager-btn prev" href="${mk(page - 1)}">← anterior</a>`
+    : `<span class="pager-btn prev disabled" aria-hidden="true">← anterior</span>`;
+  const next = page < totalPages
+    ? `<a class="pager-btn next" href="${mk(page + 1)}">próximo →</a>`
+    : `<span class="pager-btn next disabled" aria-hidden="true">próximo →</span>`;
+  return `
+<nav class="pager" aria-label="Paginação">
+  ${prev}
+  <span class="pager-label">
+    <strong>${page}</strong><span class="pager-of">de</span><strong>${totalPages}</strong>
+  </span>
+  ${next}
+</nav>`;
 }
 
 function renderResultItem(b: BookWithDownload): string {

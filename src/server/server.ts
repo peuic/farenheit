@@ -73,7 +73,7 @@ async function route(ctx: Ctx, req: Request, url: URL): Promise<Response> {
 
   if (req.method !== "GET") return new Response("method not allowed", { status: 405 });
   if (p === "/") return handleHome(ctx, url);
-  if (p === "/search") return handleSearch(ctx, url.searchParams.get("q") ?? "");
+  if (p === "/search") return handleSearch(ctx, url);
   if (p === "/sync/retry") return handleSyncRetry(ctx);
 
   let m: RegExpMatchArray | null;
