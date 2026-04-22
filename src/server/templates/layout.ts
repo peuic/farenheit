@@ -553,17 +553,23 @@ a { color: var(--ink); text-decoration: none; }
 }
 `;
 
+// Bumped once at process start — handy to confirm the browser is seeing
+// the current server build (otherwise Safari/Kobo caches can lie).
+const BUILD_STAMP = new Date().toISOString();
+
 export function layout(title: string, bodyHtml: string): string {
   return `<!DOCTYPE html>
 <html lang="pt-br">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="fh-build" content="${BUILD_STAMP}">
 <title>${escapeHtml(title)}</title>
 <style>${BASE_CSS}</style>
 </head>
 <body>
 ${bodyHtml}
+<!-- fh-build ${BUILD_STAMP} -->
 </body>
 </html>`;
 }

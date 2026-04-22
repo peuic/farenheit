@@ -68,6 +68,12 @@ export function buildTallyHtml(books: BookWithDownload[]): string {
 export function htmlResponse(html: string, status = 200): Response {
   return new Response(html, {
     status,
-    headers: { "Content-Type": "text/html; charset=utf-8" },
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      // HTML is cheap to re-render and the UI is evolving fast — never cache.
+      // Avoids Safari/Kobo serving stale markup after a redeploy.
+      "Cache-Control": "no-store, must-revalidate",
+      "Pragma": "no-cache",
+    },
   });
 }
