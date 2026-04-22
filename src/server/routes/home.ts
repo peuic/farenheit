@@ -8,7 +8,6 @@ export function handleHome(ctx: Ctx): Response {
   const rootBooks = ctx.store.list({
     category: null,
     deviceId: ctx.deviceId,
-    limit: 50,
   });
   const html = renderHome({
     pageTitle: "Farenheit",
