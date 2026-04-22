@@ -2,6 +2,7 @@ import { join } from "node:path";
 import { existsSync } from "node:fs";
 import { renderNotFound } from "../templates/notFound";
 import { htmlResponse } from "./home";
+import { COVER_MIME } from "../../indexer/cover";
 import type { Ctx } from "./context";
 
 export function handleCover(ctx: Ctx, idStr: string): Response {
@@ -15,7 +16,7 @@ export function handleCover(ctx: Ctx, idStr: string): Response {
 
   return new Response(Bun.file(path), {
     headers: {
-      "Content-Type": "image/webp",
+      "Content-Type": COVER_MIME,
       "Cache-Control": "public, max-age=2592000, immutable",
     },
   });

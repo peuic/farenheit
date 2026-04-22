@@ -120,10 +120,10 @@ describe("server routes", () => {
     expect(r.status).toBe(404);
   });
 
-  test("GET /book/:id/cover returns webp", async () => {
+  test("GET /book/:id/cover returns jpeg", async () => {
     const first = store.list({})[0]!;
     const r = await fetch(`${baseUrl}/book/${first.id}/cover?v=${first.mtime}`);
     expect(r.status).toBe(200);
-    expect(r.headers.get("content-type")).toBe("image/webp");
+    expect(r.headers.get("content-type")).toBe("image/jpeg");
   });
 });

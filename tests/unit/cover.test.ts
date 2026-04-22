@@ -16,17 +16,17 @@ describe("processCover", () => {
     rmSync(tmp, { recursive: true, force: true });
   });
 
-  test("resizes large image to max width and writes webp", async () => {
+  test("resizes large image to max width and writes jpeg", async () => {
     const big = await sharp({
       create: { width: 1200, height: 1800, channels: 3, background: { r: 120, g: 40, b: 40 } },
     }).png().toBuffer();
 
-    const dest = join(tmp, "1.webp");
+    const dest = join(tmp, "1.jpg");
     await processCover(big, dest);
 
     expect(existsSync(dest)).toBe(true);
     const meta = await sharp(dest).metadata();
-    expect(meta.format).toBe("webp");
+    expect(meta.format).toBe("jpeg");
     expect(meta.width).toBe(COVER_MAX_WIDTH);
   });
 
@@ -35,7 +35,7 @@ describe("processCover", () => {
       create: { width: 100, height: 150, channels: 3, background: { r: 0, g: 0, b: 0 } },
     }).png().toBuffer();
 
-    const dest = join(tmp, "2.webp");
+    const dest = join(tmp, "2.jpg");
     await processCover(small, dest);
 
     const meta = await sharp(dest).metadata();
@@ -43,7 +43,7 @@ describe("processCover", () => {
   });
 
   test("throws on invalid image buffer", async () => {
-    const dest = join(tmp, "3.webp");
+    const dest = join(tmp, "3.jpg");
     await expect(processCover(Buffer.from("not an image"), dest)).rejects.toThrow();
     expect(existsSync(dest)).toBe(false);
   });

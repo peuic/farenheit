@@ -2,7 +2,7 @@ import { readdirSync, statSync, existsSync, type Stats } from "node:fs";
 import { basename, join, relative, sep } from "node:path";
 import chokidar, { type FSWatcher } from "chokidar";
 import { parseEpub } from "./parser";
-import { processCover } from "./cover";
+import { processCover, COVER_EXT } from "./cover";
 import { ensureMaterialized } from "./icloud";
 import type { Store } from "../store/store";
 import type { BookInput } from "../store/types";
@@ -76,6 +76,15 @@ export class Indexer {
     return fixed;
   }
 
+  // A stored cover is "up to date" when either no cover was ever extracted
+  // (null) or the on-disk file exists AND uses the current format. A mismatch
+  // (old .webp, missing file) invalidates idempotency and forces re-index.
+  private coverIsUpToDate(coverFilename: string | null): boolean {
+    if (!coverFilename) return true;
+    if (!coverFilename.endsWith(`.${COVER_EXT}`)) return false;
+    return existsSync(join(this.deps.coversDir, coverFilename));
+  }
+
   private walk(dir: string): string[] {
     const out: string[] = [];
     if (!existsSync(dir)) return out;
@@ -123,7 +132,8 @@ export class Indexer {
       if (existing
           && existing.mtime === mtime
           && existing.sizeBytes === st.size
-          && existing.onDisk === onDisk) {
+          && existing.onDisk === onDisk
+          && this.coverIsUpToDate(existing.coverFilename)) {
         return; // unchanged — idempotent skip
       }
 
@@ -170,7 +180,7 @@ export class Indexer {
       let coverFilename: string | null = null;
       if (parseResult.cover) {
         const safeBase = relPath.replace(/[^\w.-]+/g, "_");
-        const coverFile = `${safeBase}.webp`;
+        const coverFile = `${safeBase}.${COVER_EXT}`;
         const destPath = join(this.deps.coversDir, coverFile);
         try {
           await processCover(parseResult.cover.data, destPath);
