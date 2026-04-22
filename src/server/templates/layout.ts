@@ -201,7 +201,7 @@ div.cover.placeholder {
   padding-top: 6px;
 }
 .meta .title {
-  font-size: 17px;
+  font-size: 18px;
   font-weight: bold;
   line-height: 1.25;
   color: #1a1714;
@@ -211,7 +211,7 @@ div.cover.placeholder {
   margin-bottom: 5px;
 }
 .meta .author {
-  font-size: 16px;
+  font-size: 17px;
   font-style: italic;
   color: #3e362d;
   white-space: nowrap;
