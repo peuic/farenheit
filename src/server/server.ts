@@ -17,6 +17,7 @@ export type ServerDeps = {
   config: Config;
   store: Store;
   skipICloudCheckOnDownload?: boolean;
+  onRefreshUnsynced?: () => Promise<number> | void;
 };
 
 export function startServer(deps: ServerDeps): Server {
@@ -33,6 +34,7 @@ export function startServer(deps: ServerDeps): Server {
         config,
         deviceId,
         skipICloudCheckOnDownload: deps.skipICloudCheckOnDownload,
+        onRefreshUnsynced: deps.onRefreshUnsynced,
       };
 
       let res: Response;

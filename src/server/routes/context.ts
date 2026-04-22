@@ -6,4 +6,5 @@ export type Ctx = {
   config: Config;
   deviceId: string;
   skipICloudCheckOnDownload?: boolean;
+  onRefreshUnsynced?: () => Promise<number> | void;
 };

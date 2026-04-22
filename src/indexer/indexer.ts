@@ -52,7 +52,41 @@ export class Indexer {
       await this.watcher.close();
       this.watcher = null;
     }
+    if (this.refreshTimer) {
+      clearInterval(this.refreshTimer);
+      this.refreshTimer = null;
+    }
   }
+
+  // Periodically re-stat books that are still flagged as not-on-disk.
+  // chokidar doesn't emit events when iCloud materializes a placeholder
+  // silently (blocks change but logical size doesn't), so we poll.
+  startPeriodicRefresh(intervalMs = 120_000): void {
+    if (this.refreshTimer) return;
+    this.refreshTimer = setInterval(() => {
+      void this.refreshUnsynced();
+    }, intervalMs);
+  }
+
+  async refreshUnsynced(): Promise<number> {
+    const unsynced = this.deps.store.list({}).filter((b) => !b.onDisk);
+    if (unsynced.length === 0) return 0;
+    let fixed = 0;
+    for (const b of unsynced) {
+      const full = join(this.deps.booksDir, b.relPath);
+      try {
+        await this.handleAdd(full);
+        const after = this.deps.store.getByRelPath(b.relPath);
+        if (after?.onDisk) fixed++;
+      } catch {
+        // swallow — periodic task, logs happen inside handleAdd
+      }
+    }
+    if (fixed > 0) console.log(`[indexer] refresh materialized ${fixed} book(s)`);
+    return fixed;
+  }
+
+  private refreshTimer: ReturnType<typeof setInterval> | null = null;
 
   private walk(dir: string): string[] {
     const out: string[] = [];

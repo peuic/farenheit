@@ -39,8 +39,13 @@ async function main() {
   console.log(`[farenheit] scan done in ${Date.now() - t0}ms`);
 
   indexer.watch();
+  indexer.startPeriodicRefresh(); // re-check unsynced every 2 min (iCloud silent materialization)
 
-  const server = startServer({ config, store });
+  const server = startServer({
+    config,
+    store,
+    onRefreshUnsynced: () => indexer.refreshUnsynced(),
+  });
   const ips = findLanIps();
   console.log(`[farenheit] listening on ${server.hostname}:${server.port}`);
   for (const ip of ips) {
