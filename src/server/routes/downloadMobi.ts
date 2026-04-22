@@ -46,12 +46,25 @@ export async function handleDownloadMobi(ctx: Ctx, idStr: string): Promise<Respo
 
   ctx.store.markDownloaded(ctx.deviceId, book.id);
 
-  const downloadFilename = book.filename.replace(/\.epub$/i, ".mobi");
+  // Kindle's experimental browser only accepts downloads whose Content-
+  // Disposition filename literally ends in .azw / .prc / .mobi — percent-
+  // encoded non-ASCII characters (spaces, accents, parens from Z-Library
+  // filenames) confuse its extension check. Reduce to pure ASCII.
+  const downloadFilename = `${asciiSlug(book.filename.replace(/\.epub$/i, "")) || "book"}.mobi`;
   return new Response(Bun.file(mobiPath), {
     headers: {
       "Content-Type": "application/x-mobipocket-ebook",
-      "Content-Disposition": `attachment; filename="${encodeURIComponent(downloadFilename)}"`,
+      "Content-Disposition": `attachment; filename="${downloadFilename}"`,
       "Cache-Control": "no-store",
     },
   });
+}
+
+function asciiSlug(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")   // strip diacritics
+    .replace(/[^a-zA-Z0-9._-]+/g, "_") // non-ASCII / punctuation → _
+    .replace(/_+/g, "_")
+    .replace(/^[_.-]+|[_.-]+$/g, "");
 }
