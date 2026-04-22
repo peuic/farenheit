@@ -327,29 +327,35 @@ table.pager td.col-center strong {
 }
 
 /* ═════════════ BUTTONS ═════════════ */
+/* Solid fills only — outlines disappear on E Ink screens. */
 .download-btn {
   display: block;
-  padding: 14px;
+  padding: 16px;
   text-align: center;
-  font-size: 12px;
+  font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.2em;
-  border: 1.5px solid #1a1714;
-  background: #f5efe0;
-  color: #1a1714;
+  border: 0;
+  background: #1a1714;
+  color: #f5efe0;
   text-decoration: none;
+  font-weight: bold;
 }
-.download-btn .mark { color: #b84318; margin-right: 8px; }
+.download-btn .mark {
+  color: #f5efe0;
+  margin-right: 8px;
+  font-weight: normal;
+}
 .download-btn.done {
-  color: #6b5f4f;
-  border: 1px dashed #c9bfa8;
-  padding: 13px;
+  background: #6b5f4f;
+  color: #f5efe0;
 }
-.download-btn.done .mark { color: #6b5f4f; }
+.download-btn.done .mark { color: #f5efe0; }
 .download-btn.retry {
-  color: #b84318;
-  border: 1.5px solid #b84318;
+  background: #b84318;
+  color: #f5efe0;
 }
+.download-btn.retry .mark { color: #f5efe0; }
 
 /* ═════════════ WARN / EMPTY ═════════════ */
 .warn {
