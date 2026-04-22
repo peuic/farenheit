@@ -59,15 +59,15 @@ table.topbar-main td.col-right { text-align: right;  width: 30%; }
 
 .back {
   display: inline-block;
-  color: #1a1714;
+  color: #f5efe0;
   font-size: 15px;
   font-style: italic;
-  border: 2px solid #1a1714;
-  padding: 6px 12px;
+  border: 0;
+  padding: 8px 14px;
   text-decoration: none;
-  background: #f5efe0;
+  background: #1a1714;
 }
-.back-arrow { font-style: normal; margin-right: 4px; }
+.back-arrow { font-style: normal; margin-right: 4px; color: #f5efe0; }
 
 .heading {
   font-size: 14px;
