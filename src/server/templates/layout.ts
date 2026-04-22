@@ -379,6 +379,14 @@ table.pager td.col-center strong {
   color: #f5efe0;
 }
 .download-btn.retry .mark { color: #f5efe0; }
+.download-btn.secondary {
+  background: #3e362d;
+  color: #f5efe0;
+  padding: 14px;
+  font-size: 13px;
+  margin-top: 10px;
+}
+.download-btn.secondary .mark { color: #f5efe0; }
 
 /* ═════════════ WARN / EMPTY ═════════════ */
 .warn {

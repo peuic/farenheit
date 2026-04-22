@@ -1,7 +1,11 @@
 import { escapeHtml, layout } from "./layout";
 import type { BookWithDownload } from "../../store/types";
 
-export function renderBook(b: BookWithDownload, backHref: string): string {
+export function renderBook(
+  b: BookWithDownload,
+  backHref: string,
+  mobiAvailable: boolean,
+): string {
   const coverHtml = b.coverFilename
     ? `<img class="cover-big" src="/book/${b.id}/cover?v=${b.mtime}" alt="">`
     : `<div class="cover-big placeholder">no cover</div>`;
@@ -27,10 +31,17 @@ export function renderBook(b: BookWithDownload, backHref: string): string {
   if (!b.onDisk) {
     downloadHtml = `<a class="download-btn retry" href="/book/${b.id}/sync-retry"><span class="mark">↻</span>Retry sync</a>`;
   } else if (b.downloadedAt) {
-    downloadHtml = `<a class="download-btn done" href="/book/${b.id}/download"><span class="mark">✓</span>Download again</a>`;
+    downloadHtml = `<a class="download-btn done" href="/book/${b.id}/download"><span class="mark">✓</span>Download .epub again</a>`;
   } else {
-    downloadHtml = `<a class="download-btn" href="/book/${b.id}/download"><span class="mark">❖</span>Download</a>`;
+    downloadHtml = `<a class="download-btn" href="/book/${b.id}/download"><span class="mark">❖</span>Download .epub</a>`;
   }
+
+  // MOBI conversion is only offered when Calibre's ebook-convert is available
+  // on the host (see config.ebookConvertPath). Placed below EPUB as a
+  // secondary action for Kindle users.
+  const mobiHtml = mobiAvailable && b.onDisk
+    ? `<a class="download-btn secondary" href="/book/${b.id}/download.mobi"><span class="mark">❖</span>Download .mobi (Kindle)</a>`
+    : "";
 
   const topbar = `
 <table class="topbar-main"><tr>
@@ -49,6 +60,7 @@ export function renderBook(b: BookWithDownload, backHref: string): string {
     ${unsyncedWarn}
     ${descriptionHtml}
     ${downloadHtml}
+    ${mobiHtml}
   </article>
 </div>`;
   return layout(b.title, body);

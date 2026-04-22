@@ -44,9 +44,11 @@ describe("server routes", () => {
       dataDir,
       dbPath: join(dataDir, "test.sqlite"),
       coversDir,
+      mobiCacheDir: join(dataDir, "mobi-cache"),
       logPath: join(dataDir, "test.log"),
       port: 0,
       host: "127.0.0.1",
+      ebookConvertPath: null,
     };
     server = startServer({ config, store, skipICloudCheckOnDownload: true });
     baseUrl = `http://${server.hostname}:${server.port}`;
@@ -125,5 +127,12 @@ describe("server routes", () => {
     const r = await fetch(`${baseUrl}/book/${first.id}/cover?v=${first.mtime}`);
     expect(r.status).toBe(200);
     expect(r.headers.get("content-type")).toBe("image/jpeg");
+  });
+
+  test("GET /book/:id/download.mobi → 503 when Calibre isn't configured", async () => {
+    const first = store.list({})[0]!;
+    const r = await fetch(`${baseUrl}/book/${first.id}/download.mobi`);
+    expect(r.status).toBe(503);
+    expect(await r.text()).toContain("Calibre");
   });
 });

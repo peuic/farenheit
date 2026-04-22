@@ -13,5 +13,6 @@ export function handleBook(ctx: Ctx, idStr: string): Response {
   const withDl = listed.find((b) => b.id === id) ?? book;
 
   const backHref = book.category ? `/c/${encodeURIComponent(book.category)}` : "/";
-  return htmlResponse(renderBook(withDl, backHref));
+  const mobiAvailable = ctx.config.ebookConvertPath !== null;
+  return htmlResponse(renderBook(withDl, backHref, mobiAvailable));
 }

@@ -8,6 +8,7 @@ import { handleCategory } from "./routes/category";
 import { handleBook } from "./routes/book";
 import { handleCover } from "./routes/cover";
 import { handleDownload } from "./routes/download";
+import { handleDownloadMobi } from "./routes/downloadMobi";
 import { handleSearch } from "./routes/search";
 import { handleSyncRetry, handleBookSyncRetry } from "./routes/sync";
 import { renderNotFound } from "./templates/notFound";
@@ -86,6 +87,9 @@ async function route(ctx: Ctx, req: Request, url: URL): Promise<Response> {
 
   m = p.match(/^\/book\/(\d+)\/cover\/?$/);
   if (m) return handleCover(ctx, m[1]!);
+
+  m = p.match(/^\/book\/(\d+)\/download\.mobi\/?$/);
+  if (m) return handleDownloadMobi(ctx, m[1]!);
 
   m = p.match(/^\/book\/(\d+)\/download\/?$/);
   if (m) return handleDownload(ctx, m[1]!);

@@ -25,6 +25,11 @@ async function main() {
   const config = loadConfig();
   console.log(`[farenheit] BOOKS_DIR=${config.booksDir}`);
   console.log(`[farenheit] DATA_DIR=${config.dataDir}`);
+  console.log(
+    config.ebookConvertPath
+      ? `[farenheit] MOBI export: on (${config.ebookConvertPath})`
+      : `[farenheit] MOBI export: off (install Calibre to enable)`,
+  );
 
   const store = new Store(config.dbPath);
   const indexer = new Indexer({
