@@ -70,7 +70,7 @@ describe("E2E — full flow", () => {
   test("full flow: list, download, mark, reload, add file", async () => {
     let r = await fetch(baseUrl);
     let body = await r.text();
-    expect(body).toContain("3 livros");
+    expect(body).toContain(">3</strong> livros");
 
     const first = store.list({})[0]!;
     r = await fetch(`${baseUrl}/book/${first.id}/download`);
@@ -91,6 +91,6 @@ describe("E2E — full flow", () => {
 
     r = await fetch(baseUrl, { headers: { cookie } });
     body = await r.text();
-    expect(body).toContain("4 livros");
+    expect(body).toContain(">4</strong> livros");
   });
 });

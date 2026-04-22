@@ -3,52 +3,53 @@ import type { BookWithDownload } from "../../store/types";
 
 export function renderBook(b: BookWithDownload, backHref: string): string {
   const coverHtml = b.coverFilename
-    ? `<img class="cover-big" src="/book/${b.id}/cover?v=${b.mtime}" alt="">`
+    ? `<img class="cover-big" src="/book/${b.id}/cover?v=${b.mtime}" alt="" loading="lazy">`
     : `<div class="cover-big placeholder">sem capa</div>`;
 
-  const filemetaParts = [
+  const specs = [
     "epub",
     formatSize(b.sizeBytes),
-    b.downloadedAt ? `baixado ${formatRelTime(b.downloadedAt)}` : `adicionado ${formatRelTime(b.addedAt)}`,
-  ];
+    b.downloadedAt
+      ? `baixado ${formatRelTime(b.downloadedAt)}`
+      : `adicionado ${formatRelTime(b.addedAt)}`,
+  ].join(`<span class="sep">·</span>`);
 
   const descriptionText = b.description ? stripHtmlToPlainText(b.description) : "";
   const descriptionHtml = descriptionText
     ? `<div class="description">${escapeHtml(descriptionText)}</div>`
     : "";
 
-  const btnClass = b.downloadedAt ? "download-btn done" : "download-btn";
-  const btnText = b.downloadedAt ? "⬇  Baixar novamente" : "⬇  Baixar no Kobo";
-
   const unsyncedWarn = !b.onDisk
-    ? `<div class="warn">⏳ Este livro ainda não baixou do iCloud. Você pode forçar uma nova tentativa.</div>`
+    ? `<div class="warn">Este livro ainda não baixou do iCloud. Você pode forçar uma nova tentativa.</div>`
     : "";
-  const downloadHtml = b.onDisk
-    ? `<a class="${btnClass}" href="/book/${b.id}/download">${btnText}</a>`
-    : `<a class="download-btn retry" href="/book/${b.id}/sync-retry">↻  Tentar sincronizar</a>`;
+
+  let downloadHtml: string;
+  if (!b.onDisk) {
+    downloadHtml = `<a class="download-btn retry" href="/book/${b.id}/sync-retry">Tentar sincronizar</a>`;
+  } else if (b.downloadedAt) {
+    downloadHtml = `<a class="download-btn done" href="/book/${b.id}/download">Baixar novamente</a>`;
+  } else {
+    downloadHtml = `<a class="download-btn" href="/book/${b.id}/download">Baixar no Kobo</a>`;
+  }
 
   const body = `
-<div class="nav">
-  <a href="${escapeHtml(backHref)}">← Voltar</a>
+<nav class="nav" aria-label="Navegação">
+  <a class="back" href="${escapeHtml(backHref)}">voltar</a>
   <a href="/">Farenheit</a>
-</div>
-<div class="detail">
+</nav>
+<article class="detail">
   ${coverHtml}
   <h1>${escapeHtml(b.title)}</h1>
-  ${b.author ? `<div class="author">${escapeHtml(b.author)}</div>` : ""}
-  <div class="filemeta">${filemetaParts.join(" · ")}</div>
+  ${b.author ? `<div class="byline">${escapeHtml(b.author)}</div>` : ""}
+  <div class="specs">${specs}</div>
   ${unsyncedWarn}
   ${descriptionHtml}
   ${downloadHtml}
-</div>
+</article>
 `;
   return layout(b.title, body);
 }
 
-// Some epubs store <dc:description> as HTML (e.g. "<p>foo</p><br>bar").
-// fast-xml-parser decodes entities, so we end up with literal HTML in the DB.
-// Strip tags + decode a few common entities the XML parser left alone,
-// collapse whitespace. Rendered output is then safely re-escaped by caller.
 function stripHtmlToPlainText(raw: string): string {
   return raw
     .replace(/<\s*br\s*\/?>/gi, " ")

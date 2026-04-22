@@ -72,14 +72,14 @@ async function route(ctx: Ctx, req: Request, url: URL): Promise<Response> {
   const p = url.pathname;
 
   if (req.method !== "GET") return new Response("method not allowed", { status: 405 });
-  if (p === "/") return handleHome(ctx);
+  if (p === "/") return handleHome(ctx, url);
   if (p === "/search") return handleSearch(ctx, url.searchParams.get("q") ?? "");
   if (p === "/sync/retry") return handleSyncRetry(ctx);
 
   let m: RegExpMatchArray | null;
 
   m = p.match(/^\/c\/([^/]+)\/?$/);
-  if (m) return handleCategory(ctx, decodeURIComponent(m[1]!));
+  if (m) return handleCategory(ctx, decodeURIComponent(m[1]!), url);
 
   m = p.match(/^\/book\/(\d+)\/?$/);
   if (m) return handleBook(ctx, m[1]!);
