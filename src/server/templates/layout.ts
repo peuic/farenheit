@@ -201,7 +201,7 @@ div.cover.placeholder {
   padding-top: 6px;
 }
 .meta .title {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: bold;
   line-height: 1.25;
   color: #1a1714;
