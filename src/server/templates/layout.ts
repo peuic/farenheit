@@ -57,8 +57,17 @@ table.topbar-main td.col-right { text-align: right;  width: 30%; }
 .brand { font-style: italic; font-size: 17px; color: #1a1714; }
 .brand-mark { color: #b84318; font-style: normal; margin-right: 5px; }
 
-.back { color: #6b5f4f; font-size: 13px; font-style: italic; }
-.back-arrow { font-style: normal; margin-right: 2px; }
+.back {
+  display: inline-block;
+  color: #1a1714;
+  font-size: 12px;
+  font-style: italic;
+  border: 2px solid #1a1714;
+  padding: 4px 10px;
+  text-decoration: none;
+  background: #f5efe0;
+}
+.back-arrow { font-style: normal; margin-right: 4px; }
 
 .heading {
   font-size: 12px;
