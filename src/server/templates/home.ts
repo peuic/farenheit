@@ -23,7 +23,7 @@ const SEARCH_ICON = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"
 
 export function renderHome(o: Opts): string {
   const left = o.backHref
-    ? `<a class="back" href="${escapeHtml(o.backHref)}"><span class="back-arrow">←</span>todos</a>`
+    ? `<a class="back" href="${escapeHtml(o.backHref)}"><span class="back-arrow">←</span>all</a>`
     : `<span class="brand"><span class="brand-mark">§</span>Farenheit</span>`;
 
   const headingText = o.backHref && o.heading
@@ -34,7 +34,7 @@ export function renderHome(o: Opts): string {
 <table class="topbar-main"><tr>
   <td class="col-left">${left}</td>
   <td class="col-center"><span class="heading">${headingText}</span></td>
-  <td class="col-right"><a class="icon-btn" href="/search" aria-label="Buscar">${SEARCH_ICON}</a></td>
+  <td class="col-right"><a class="icon-btn" href="/search" aria-label="Search">${SEARCH_ICON}</a></td>
 </tr></table>`;
 
   const sortLink = (key: SortKey, label: string) => {
@@ -46,7 +46,7 @@ export function renderHome(o: Opts): string {
   const topbarMeta = `
 <table class="topbar-meta"><tr>
   <td class="col-left"><span class="count">${o.tallyHtml ?? ""}</span></td>
-  <td class="col-right"><span class="sort">${sortLink("recent", "recente")}${sortLink("title", "título")}${sortLink("author", "autor")}</span></td>
+  <td class="col-right"><span class="sort">${sortLink("recent", "recent")}${sortLink("title", "title")}${sortLink("author", "author")}</span></td>
 </tr></table>`;
 
   const alphanavHtml = o.letterIndex
@@ -54,7 +54,7 @@ export function renderHome(o: Opts): string {
     : "";
 
   const booksHtml = o.books.length === 0
-    ? `<div class="empty">Nenhum livro por aqui.</div>`
+    ? `<div class="empty">No books here yet.</div>`
     : `<ul class="book-list">${o.books.map(renderBookItem).join("")}</ul>`;
 
   const pagerHtml = renderPager(o.page, o.totalPages, o.sortBasePath, o.sort);
@@ -90,15 +90,15 @@ function renderPager(
   const prevHref = page > 1 ? pageUrl(basePath, sort, page - 1) : null;
   const nextHref = page < totalPages ? pageUrl(basePath, sort, page + 1) : null;
   const prev = prevHref
-    ? `<a class="pager-btn" href="${prevHref}" aria-label="Página anterior">${CHEVRON_LEFT}</a>`
-    : `<span class="pager-btn disabled" aria-label="Primeira página">${CHEVRON_LEFT}</span>`;
+    ? `<a class="pager-btn" href="${prevHref}" aria-label="Previous page">${CHEVRON_LEFT}</a>`
+    : `<span class="pager-btn disabled" aria-label="First page">${CHEVRON_LEFT}</span>`;
   const next = nextHref
-    ? `<a class="pager-btn" href="${nextHref}" aria-label="Próxima página">${CHEVRON_RIGHT}</a>`
-    : `<span class="pager-btn disabled" aria-label="Última página">${CHEVRON_RIGHT}</span>`;
+    ? `<a class="pager-btn" href="${nextHref}" aria-label="Next page">${CHEVRON_RIGHT}</a>`
+    : `<span class="pager-btn disabled" aria-label="Last page">${CHEVRON_RIGHT}</span>`;
   return `
 <table class="pager"><tr>
   <td class="col-left">${prev}</td>
-  <td class="col-center"><strong>${page}</strong>&nbsp;de&nbsp;<strong>${Math.max(1, totalPages)}</strong></td>
+  <td class="col-center"><strong>${page}</strong>&nbsp;of&nbsp;<strong>${Math.max(1, totalPages)}</strong></td>
   <td class="col-right">${next}</td>
 </tr></table>`;
 }
@@ -106,7 +106,7 @@ function renderPager(
 function renderBookItem(b: BookWithDownload): string {
   const coverHtml = b.coverFilename
     ? `<img class="cover" src="/book/${b.id}/cover?v=${b.mtime}" alt="" width="50" height="75">`
-    : `<div class="cover placeholder">sem<br>capa</div>`;
+    : `<div class="cover placeholder">no<br>cover</div>`;
   const authorHtml = b.author
     ? `<div class="author">${escapeHtml(b.author)}</div>`
     : "";

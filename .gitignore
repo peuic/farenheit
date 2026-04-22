@@ -2,6 +2,8 @@ node_modules/
 data/
 .DS_Store
 .superpowers/
+.claude/
+docs/superpowers/
 *.log
 .env
 .env.local

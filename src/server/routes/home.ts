@@ -51,9 +51,9 @@ export function parsePage(raw: string | null): number {
 export function buildTallyHtml(books: BookWithDownload[]): string {
   const total = books.length;
   const unsynced = books.filter((b) => !b.onDisk).length;
-  const totalLabel = `<strong>${total}</strong> ${total === 1 ? "livro" : "livros"}`;
+  const totalLabel = `<strong>${total}</strong> ${total === 1 ? "book" : "books"}`;
   if (unsynced === 0) return totalLabel;
-  return `${totalLabel} · ${unsynced} pend. <a class="retry" href="/sync/retry" aria-label="Tentar sincronizar">↻</a>`;
+  return `${totalLabel} · ${unsynced} pending <a class="retry" href="/sync/retry" aria-label="Retry sync">↻</a>`;
 }
 
 export function htmlResponse(html: string, status = 200): Response {

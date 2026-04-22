@@ -4,14 +4,14 @@ import type { BookWithDownload } from "../../store/types";
 export function renderBook(b: BookWithDownload, backHref: string): string {
   const coverHtml = b.coverFilename
     ? `<img class="cover-big" src="/book/${b.id}/cover?v=${b.mtime}" alt="">`
-    : `<div class="cover-big placeholder">sem capa</div>`;
+    : `<div class="cover-big placeholder">no cover</div>`;
 
   const specs = [
     "epub",
     formatSize(b.sizeBytes),
     b.downloadedAt
-      ? `baixado ${formatRelTime(b.downloadedAt)}`
-      : `adicionado ${formatRelTime(b.addedAt)}`,
+      ? `downloaded ${formatRelTime(b.downloadedAt)}`
+      : `added ${formatRelTime(b.addedAt)}`,
   ].join(`<span class="sep">·</span>`);
 
   const descriptionText = b.description ? stripHtmlToPlainText(b.description) : "";
@@ -20,22 +20,22 @@ export function renderBook(b: BookWithDownload, backHref: string): string {
     : "";
 
   const unsyncedWarn = !b.onDisk
-    ? `<div class="warn">Este livro ainda não baixou do iCloud. Você pode forçar uma nova tentativa.</div>`
+    ? `<div class="warn">This book hasn't downloaded from iCloud yet. You can force a retry.</div>`
     : "";
 
   let downloadHtml: string;
   if (!b.onDisk) {
-    downloadHtml = `<a class="download-btn retry" href="/book/${b.id}/sync-retry"><span class="mark">↻</span>Tentar sincronizar</a>`;
+    downloadHtml = `<a class="download-btn retry" href="/book/${b.id}/sync-retry"><span class="mark">↻</span>Retry sync</a>`;
   } else if (b.downloadedAt) {
-    downloadHtml = `<a class="download-btn done" href="/book/${b.id}/download"><span class="mark">✓</span>Baixar novamente</a>`;
+    downloadHtml = `<a class="download-btn done" href="/book/${b.id}/download"><span class="mark">✓</span>Download again</a>`;
   } else {
-    downloadHtml = `<a class="download-btn" href="/book/${b.id}/download"><span class="mark">❖</span>Baixar no Kobo</a>`;
+    downloadHtml = `<a class="download-btn" href="/book/${b.id}/download"><span class="mark">❖</span>Download</a>`;
   }
 
   const topbar = `
 <table class="topbar-main"><tr>
-  <td class="col-left"><a class="back" href="${escapeHtml(backHref)}"><span class="back-arrow">←</span>voltar</a></td>
-  <td class="col-center"><span class="heading">Livro</span></td>
+  <td class="col-left"><a class="back" href="${escapeHtml(backHref)}"><span class="back-arrow">←</span>back</a></td>
+  <td class="col-center"><span class="heading">Book</span></td>
   <td class="col-right"><a class="icon-btn" href="/" aria-label="Home"><span class="brand-mark">§</span></a></td>
 </tr></table>`;
 
@@ -78,12 +78,12 @@ function formatSize(bytes: number): string {
 function formatRelTime(tsMs: number): string {
   const diff = Date.now() - tsMs;
   const day = 24 * 60 * 60 * 1000;
-  if (diff < day) return "hoje";
-  if (diff < 2 * day) return "ontem";
+  if (diff < day) return "today";
+  if (diff < 2 * day) return "yesterday";
   const days = Math.floor(diff / day);
-  if (days < 30) return `há ${days} dias`;
+  if (days < 30) return `${days} days ago`;
   const months = Math.floor(days / 30);
-  if (months < 12) return `há ${months} ${months === 1 ? "mês" : "meses"}`;
+  if (months < 12) return `${months} ${months === 1 ? "month" : "months"} ago`;
   const years = Math.floor(days / 365);
-  return `há ${years} ${years === 1 ? "ano" : "anos"}`;
+  return `${years} ${years === 1 ? "year" : "years"} ago`;
 }

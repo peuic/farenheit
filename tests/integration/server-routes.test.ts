@@ -89,7 +89,7 @@ describe("server routes", () => {
     const r = await fetch(`${baseUrl}/book/${first.id}`);
     const body = await r.text();
     expect(r.status).toBe(200);
-    expect(body).toContain("Baixar no Kobo");
+    expect(body).toContain("Download");
   });
 
   test("GET /book/:id/download returns epub bytes and marks downloaded", async () => {
