@@ -229,18 +229,17 @@ table.pager {
 table.pager td {
   vertical-align: middle;
   height: 60px;
-  padding: 0;
+  padding: 6px;
 }
-table.pager td.col-left  { width: 35%; text-align: left; }
-table.pager td.col-right { width: 35%; text-align: right; }
+table.pager td.col-left  { width: 35%; }
+table.pager td.col-right { width: 35%; }
 table.pager td.col-center{
   text-align: center;
   font-size: 13px;
   color: #6b5f4f;
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  border-left: 1px solid #c9bfa8;
-  border-right: 1px solid #c9bfa8;
+  padding: 0;
 }
 table.pager td.col-center strong {
   color: #1a1714;
@@ -252,13 +251,25 @@ table.pager td.col-center strong {
 }
 .pager-btn {
   display: block;
-  padding: 20px 16px;
-  font-size: 15px;
-  font-style: italic;
-  color: #1a1714;
+  padding: 12px 16px;
+  background: #1a1714;
+  color: #f5efe0;
+  text-align: center;
   text-decoration: none;
+  border: 0;
 }
-.pager-btn.disabled { color: #958873; }
+.pager-btn svg {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  vertical-align: middle;
+  stroke: currentColor;
+  fill: none;
+}
+.pager-btn.disabled {
+  background: #ece3cd;
+  color: #c9bfa8;
+}
 
 /* ═════════════ NARROW PAGES (detail / search / 404) ═════════════ */
 .page-narrow {

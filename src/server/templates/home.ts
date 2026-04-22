@@ -78,6 +78,9 @@ function renderAlphanav(
   return `<table class="alphanav"><tr>${cells}</tr></table>`;
 }
 
+const CHEVRON_LEFT  = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6 L9 12 L15 18" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const CHEVRON_RIGHT = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6 L15 12 L9 18" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
 function renderPager(
   page: number,
   totalPages: number,
@@ -87,11 +90,11 @@ function renderPager(
   const prevHref = page > 1 ? pageUrl(basePath, sort, page - 1) : null;
   const nextHref = page < totalPages ? pageUrl(basePath, sort, page + 1) : null;
   const prev = prevHref
-    ? `<a class="pager-btn" href="${prevHref}">← anterior</a>`
-    : `<span class="pager-btn disabled">← anterior</span>`;
+    ? `<a class="pager-btn" href="${prevHref}" aria-label="Página anterior">${CHEVRON_LEFT}</a>`
+    : `<span class="pager-btn disabled" aria-label="Primeira página">${CHEVRON_LEFT}</span>`;
   const next = nextHref
-    ? `<a class="pager-btn" href="${nextHref}">próximo →</a>`
-    : `<span class="pager-btn disabled">próximo →</span>`;
+    ? `<a class="pager-btn" href="${nextHref}" aria-label="Próxima página">${CHEVRON_RIGHT}</a>`
+    : `<span class="pager-btn disabled" aria-label="Última página">${CHEVRON_RIGHT}</span>`;
   return `
 <table class="pager"><tr>
   <td class="col-left">${prev}</td>

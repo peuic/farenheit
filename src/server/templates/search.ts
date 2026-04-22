@@ -43,6 +43,9 @@ export function renderSearchPage(
   return layout(`Busca: ${query}`, topbar + form + resultsBlock + `</div>`);
 }
 
+const CHEVRON_LEFT  = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6 L9 12 L15 18" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const CHEVRON_RIGHT = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6 L15 12 L9 18" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
 function renderPager(query: string, page: number, totalPages: number): string {
   if (totalPages <= 1) return "";
   const mk = (p: number) => {
@@ -52,11 +55,11 @@ function renderPager(query: string, page: number, totalPages: number): string {
     return `/search?${params.toString()}`;
   };
   const prev = page > 1
-    ? `<a class="pager-btn" href="${mk(page - 1)}">← anterior</a>`
-    : `<span class="pager-btn disabled">← anterior</span>`;
+    ? `<a class="pager-btn" href="${mk(page - 1)}" aria-label="Página anterior">${CHEVRON_LEFT}</a>`
+    : `<span class="pager-btn disabled" aria-label="Primeira página">${CHEVRON_LEFT}</span>`;
   const next = page < totalPages
-    ? `<a class="pager-btn" href="${mk(page + 1)}">próximo →</a>`
-    : `<span class="pager-btn disabled">próximo →</span>`;
+    ? `<a class="pager-btn" href="${mk(page + 1)}" aria-label="Próxima página">${CHEVRON_RIGHT}</a>`
+    : `<span class="pager-btn disabled" aria-label="Última página">${CHEVRON_RIGHT}</span>`;
   return `
 <table class="pager" style="margin-top:14px"><tr>
   <td class="col-left">${prev}</td>
