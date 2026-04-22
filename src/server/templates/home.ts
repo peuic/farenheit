@@ -39,7 +39,7 @@ export function renderHome(o: Opts): string {
 
   const booksHtml = o.books.length === 0
     ? `<div class="empty">Nenhum livro por aqui.</div>`
-    : `<ul class="book-list">${o.books.map(renderBookItem).join("")}</ul>`;
+    : `<ul class="book-list fill">${o.books.map(renderBookItem).join("")}</ul>`;
 
   const pagerHtml = renderPager(o.page, o.totalPages, o.sortBasePath, o.sort);
 

@@ -9,22 +9,23 @@ export function renderSearchPage(
   totalPages: number,
 ): string {
   const form = `
-<nav class="nav" aria-label="Navegação">
-  <a class="back" href="/">voltar</a>
-  <a href="/">Farenheit</a>
-</nav>
-<section class="title-block">
-  <div class="overline">Buscar</div>
-  <h1>título ou autor</h1>
-</section>
-<form class="search" method="get" action="/search">
-  <input type="text" name="q" value="${escapeHtml(query)}" placeholder="digite aqui…" autofocus>
-  <button type="submit">Buscar</button>
-</form>
+<div class="page-narrow">
+  <nav class="nav" aria-label="Navegação">
+    <a class="back" href="/">voltar</a>
+    <a href="/">Farenheit</a>
+  </nav>
+  <section class="title-block">
+    <div class="overline">Buscar</div>
+    <h1>título ou autor</h1>
+  </section>
+  <form class="search" method="get" action="/search">
+    <input type="text" name="q" value="${escapeHtml(query)}" placeholder="digite aqui…" autofocus>
+    <button type="submit">Buscar</button>
+  </form>
 `;
 
   if (!query) {
-    return layout("Buscar — Farenheit", form);
+    return layout("Buscar — Farenheit", form + `</div>`);
   }
 
   const resultsBlock = totalResults === 0
@@ -35,7 +36,7 @@ export function renderSearchPage(
        </ul>
        ${renderPager(query, page, totalPages)}`;
 
-  return layout(`Busca: ${query}`, form + resultsBlock);
+  return layout(`Busca: ${query}`, form + resultsBlock + `</div>`);
 }
 
 function renderPager(query: string, page: number, totalPages: number): string {

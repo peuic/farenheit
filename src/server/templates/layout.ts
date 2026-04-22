@@ -28,11 +28,24 @@ html, body {
   line-height: 1.5;
   font-variant-numeric: oldstyle-nums;
   -webkit-font-smoothing: antialiased;
+  height: 100%;
 }
 body {
-  max-width: 680px;
+  min-height: 100vh;
+  min-height: 100svh;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 18px 22px 56px;
+  padding: 20px 28px 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Wrapper used by text-heavy pages (book detail, search, 404) to keep a
+   readable measure even when body is full-viewport. */
+.page-narrow {
+  max-width: 640px;
+  width: 100%;
+  margin: 0 auto;
 }
 a { color: var(--ink); text-decoration: none; }
 
@@ -213,7 +226,7 @@ a { color: var(--ink); text-decoration: none; }
 /* ————— BOOK LIST ————— */
 .book-list {
   list-style: none;
-  margin-bottom: 28px;
+  margin-bottom: 20px;
 }
 .book-list li {
   border-bottom: 1px solid var(--hair);
@@ -222,7 +235,7 @@ a { color: var(--ink); text-decoration: none; }
 .book-list li:last-child { border-bottom: 0; }
 .book-list a {
   display: flex;
-  gap: 14px;
+  gap: 16px;
   padding: 12px 4px 12px 22px;
   color: inherit;
   align-items: center;
@@ -243,8 +256,8 @@ a { color: var(--ink); text-decoration: none; }
 .book-list li.downloaded .marker::before { content: "✓"; color: var(--ember); }
 .book-list li.unsynced .marker::before { content: "⊙"; color: var(--fade-light); }
 .book-list .cover {
-  width: 44px;
-  height: 66px;
+  width: 52px;
+  height: 78px;
   flex-shrink: 0;
   object-fit: cover;
   border: 1px solid var(--hair);
@@ -254,8 +267,8 @@ a { color: var(--ink); text-decoration: none; }
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 3px;
-  font-size: 9px;
+  padding: 4px;
+  font-size: 10px;
   color: var(--fade);
   font-style: italic;
   text-align: center;
@@ -263,9 +276,9 @@ a { color: var(--ink); text-decoration: none; }
 }
 .book-list .meta { flex: 1; min-width: 0; }
 .book-list .meta .title {
-  font-size: 16px;
+  font-size: 17px;
   line-height: 1.22;
-  margin-bottom: 2px;
+  margin-bottom: 3px;
   color: var(--ink);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -274,7 +287,7 @@ a { color: var(--ink); text-decoration: none; }
   -webkit-box-orient: vertical;
 }
 .book-list .meta .author {
-  font-size: 12px;
+  font-size: 13px;
   font-style: italic;
   color: var(--fade);
   white-space: nowrap;
@@ -283,6 +296,27 @@ a { color: var(--ink); text-decoration: none; }
 }
 .book-list li.downloaded .meta .title { color: var(--fade); }
 .book-list li.unsynced .meta .title { color: var(--fade); font-style: italic; }
+
+/* Fill mode — distribute 10 items evenly between header and pager. */
+.book-list.fill {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+}
+.book-list.fill li {
+  flex: 1 1 0;
+  display: flex;
+  min-height: 72px;
+}
+.book-list.fill li a {
+  width: 100%;
+  min-height: 0;
+}
+.book-list.fill .cover {
+  width: 60px;
+  height: 90px;
+}
 
 /* ————— DETAIL ————— */
 .nav {

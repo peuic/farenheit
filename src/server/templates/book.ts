@@ -33,19 +33,21 @@ export function renderBook(b: BookWithDownload, backHref: string): string {
   }
 
   const body = `
-<nav class="nav" aria-label="Navegação">
-  <a class="back" href="${escapeHtml(backHref)}">voltar</a>
-  <a href="/">Farenheit</a>
-</nav>
-<article class="detail">
-  ${coverHtml}
-  <h1>${escapeHtml(b.title)}</h1>
-  ${b.author ? `<div class="byline">${escapeHtml(b.author)}</div>` : ""}
-  <div class="specs">${specs}</div>
-  ${unsyncedWarn}
-  ${descriptionHtml}
-  ${downloadHtml}
-</article>
+<div class="page-narrow">
+  <nav class="nav" aria-label="Navegação">
+    <a class="back" href="${escapeHtml(backHref)}">voltar</a>
+    <a href="/">Farenheit</a>
+  </nav>
+  <article class="detail">
+    ${coverHtml}
+    <h1>${escapeHtml(b.title)}</h1>
+    ${b.author ? `<div class="byline">${escapeHtml(b.author)}</div>` : ""}
+    <div class="specs">${specs}</div>
+    ${unsyncedWarn}
+    ${descriptionHtml}
+    ${downloadHtml}
+  </article>
+</div>
 `;
   return layout(b.title, body);
 }
