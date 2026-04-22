@@ -59,7 +59,7 @@ export function renderHome(o: Opts): string {
 
   const pagerHtml = renderPager(o.page, o.totalPages, o.sortBasePath, o.sort);
 
-  const body = `${topbarMain}${topbarMeta}${alphanavHtml}${booksHtml}${pagerHtml}`;
+  const body = `${topbarMain}${topbarMeta}${alphanavHtml}${pagerHtml}${booksHtml}`;
   return layout(o.pageTitle, body);
 }
 

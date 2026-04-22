@@ -35,10 +35,10 @@ export function renderSearchPage(
     : `<div class="count" style="margin-bottom:8px">
          <strong>${totalResults}</strong> ${totalResults === 1 ? "resultado" : "resultados"}
        </div>
+       ${renderPager(query, page, totalPages)}
        <ul class="book-list">
          ${pageResults.map(renderResultItem).join("")}
-       </ul>
-       ${renderPager(query, page, totalPages)}`;
+       </ul>`;
 
   return layout(`Busca: ${query}`, topbar + form + resultsBlock + `</div>`);
 }

@@ -223,7 +223,7 @@ li.unsynced   .meta .title { color: #6b5f4f; font-style: italic; font-weight: no
 
 /* ═════════════ PAGER (natural block flow, not fixed) ═════════════ */
 table.pager {
-  border-top: 1px solid #c9bfa8;
+  border-bottom: 1px solid #c9bfa8;
   margin-top: 0;
 }
 table.pager td {
