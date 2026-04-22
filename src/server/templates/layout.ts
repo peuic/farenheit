@@ -419,6 +419,20 @@ a { color: var(--ink); text-decoration: none; }
 .warn::before { content: "⏳ "; font-style: normal; margin-right: 4px; }
 
 /* ————— SEARCH ————— */
+.search-inline { margin-bottom: 24px; }
+.search-inline input {
+  width: 100%;
+  padding: 12px 0 10px;
+  font-size: 18px;
+  font-family: inherit;
+  font-style: italic;
+  border: 0;
+  border-bottom: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  outline: none;
+}
+.search-inline input::placeholder { color: var(--fade-light); }
 .search { margin-bottom: 28px; }
 .search input[type="text"] {
   width: 100%;

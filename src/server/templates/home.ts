@@ -53,6 +53,10 @@ export function renderHome(o: Opts): string {
   ${o.tallyHtml ? `<div class="tally">${o.tallyHtml}</div>` : ""}
 </section>
 
+<form class="search-inline" method="get" action="/search" role="search">
+  <input type="text" name="q" placeholder="buscar por título ou autor…" autocomplete="off">
+</form>
+
 ${categoriesHtml}
 ${sortBarHtml}
 ${booksHtml}
