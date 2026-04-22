@@ -9,6 +9,7 @@ import { handleBook } from "./routes/book";
 import { handleCover } from "./routes/cover";
 import { handleDownload } from "./routes/download";
 import { handleSearch } from "./routes/search";
+import { handleSyncRetry, handleBookSyncRetry } from "./routes/sync";
 import { renderNotFound } from "./templates/notFound";
 import type { Ctx } from "./routes/context";
 
@@ -71,6 +72,7 @@ async function route(ctx: Ctx, req: Request, url: URL): Promise<Response> {
   if (req.method !== "GET") return new Response("method not allowed", { status: 405 });
   if (p === "/") return handleHome(ctx);
   if (p === "/search") return handleSearch(ctx, url.searchParams.get("q") ?? "");
+  if (p === "/sync/retry") return handleSyncRetry(ctx);
 
   let m: RegExpMatchArray | null;
 
@@ -85,6 +87,9 @@ async function route(ctx: Ctx, req: Request, url: URL): Promise<Response> {
 
   m = p.match(/^\/book\/(\d+)\/download\/?$/);
   if (m) return handleDownload(ctx, m[1]!);
+
+  m = p.match(/^\/book\/(\d+)\/sync-retry\/?$/);
+  if (m) return handleBookSyncRetry(ctx, m[1]!);
 
   return htmlResponse(renderNotFound(), 404);
 }

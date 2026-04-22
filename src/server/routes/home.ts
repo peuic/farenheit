@@ -14,6 +14,7 @@ export function handleHome(ctx: Ctx): Response {
     pageTitle: "Farenheit",
     heading: "Farenheit",
     subHeading: buildCountSubHeading(all),
+    subHeadingActionsHtml: buildRetryActionHtml(all),
     categories,
     books: rootBooks,
   });
@@ -27,6 +28,12 @@ export function buildCountSubHeading(books: BookWithDownload[]): string {
   const totalLabel = `${total} ${total === 1 ? "livro" : "livros"}`;
   if (unsynced === 0) return totalLabel;
   return `${totalLabel} · ${synced} sincronizados · ${unsynced} pendentes`;
+}
+
+export function buildRetryActionHtml(books: BookWithDownload[]): string {
+  const hasUnsynced = books.some((b) => !b.onDisk);
+  if (!hasUnsynced) return "";
+  return ` <a class="retry-link" href="/sync/retry">↻ tentar sincronizar</a>`;
 }
 
 export function htmlResponse(html: string, status = 200): Response {

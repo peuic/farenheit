@@ -20,11 +20,11 @@ export function renderBook(b: BookWithDownload, backHref: string): string {
   const btnText = b.downloadedAt ? "⬇  Baixar novamente" : "⬇  Baixar no Kobo";
 
   const unsyncedWarn = !b.onDisk
-    ? `<div class="warn">⏳ Este livro ainda está sincronizando do iCloud. Aguarde alguns instantes.</div>`
+    ? `<div class="warn">⏳ Este livro ainda não baixou do iCloud. Você pode forçar uma nova tentativa.</div>`
     : "";
   const downloadHtml = b.onDisk
     ? `<a class="${btnClass}" href="/book/${b.id}/download">${btnText}</a>`
-    : `<span class="download-btn disabled">⏳  Aguardando sincronização</span>`;
+    : `<a class="download-btn retry" href="/book/${b.id}/sync-retry">↻  Tentar sincronizar</a>`;
 
   const body = `
 <div class="nav">

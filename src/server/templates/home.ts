@@ -5,6 +5,7 @@ type Opts = {
   pageTitle: string;
   heading: string;
   subHeading?: string;
+  subHeadingActionsHtml?: string; // raw HTML — caller-escaped
   backHref?: string;
   categories?: CategoryCount[];
   books: BookWithDownload[];
@@ -34,7 +35,7 @@ export function renderHome(o: Opts): string {
   </a>
 </div>
 <h1>${escapeHtml(o.heading)}</h1>
-${o.subHeading ? `<p class="sub">${escapeHtml(o.subHeading)}</p>` : ""}
+${o.subHeading ? `<p class="sub">${escapeHtml(o.subHeading)}${o.subHeadingActionsHtml ?? ""}</p>` : ""}
 ${categoriesHtml}
 <h2>Livros${o.backHref ? "" : " na raiz"}</h2>
 ${bookItems}

@@ -97,6 +97,21 @@ h2 { font-size: 18px; margin: 18px 0 8px; border-bottom: 1px solid #888; padding
   padding: 16px; font-weight: normal;
   cursor: not-allowed;
 }
+.download-btn.retry {
+  background: transparent; color: #5a441a; border: 2px solid #c89a3c;
+  padding: 16px; font-weight: bold;
+}
+.retry-link {
+  margin-left: 6px;
+  padding: 4px 8px;
+  border: 1px solid #c89a3c;
+  border-radius: 3px;
+  color: #5a441a;
+  text-decoration: none;
+  font-size: 13px;
+  display: inline-block;
+}
+.retry-link:active { background: #fff4e1; }
 .warn {
   background: #fff4e1; border-left: 4px solid #c89a3c;
   padding: 10px 12px; margin: 12px 0;

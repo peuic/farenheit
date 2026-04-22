@@ -1,5 +1,5 @@
 import { renderHome } from "../templates/home";
-import { htmlResponse, buildCountSubHeading } from "./home";
+import { htmlResponse, buildCountSubHeading, buildRetryActionHtml } from "./home";
 import type { Ctx } from "./context";
 
 export function handleCategory(ctx: Ctx, categoryName: string): Response {
@@ -11,6 +11,7 @@ export function handleCategory(ctx: Ctx, categoryName: string): Response {
     pageTitle: `${categoryName} — Farenheit`,
     heading: categoryName,
     subHeading: buildCountSubHeading(books),
+    subHeadingActionsHtml: buildRetryActionHtml(books),
     books,
     backHref: "/",
   });

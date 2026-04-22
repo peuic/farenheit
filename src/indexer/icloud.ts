@@ -35,3 +35,9 @@ export async function ensureMaterialized(path: string, timeoutMs = 60_000): Prom
   }
   throw new Error(`timeout waiting for iCloud download: ${path}`);
 }
+
+// Fire-and-forget download request. Does not wait for completion —
+// brctl hands the task off to fileproviderd and returns.
+export async function requestDownload(path: string): Promise<void> {
+  await runner("brctl", ["download", path]);
+}
