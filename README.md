@@ -14,7 +14,7 @@ Optimized for the real-world constraints of e-ink displays: zero-JS markup, pagi
 - **Sort** by recently added, title, or author. Alphabet jump strip skips straight to the page where a letter starts.
 - **Per-device download tracking** — each e-reader gets a cookie UUID; downloaded books are visibly marked so you don't re-download what's already on the device.
 - **iCloud-aware** — detects dataless placeholders (files in iCloud but not yet materialized locally), marks them in the UI with a retry action that invokes `brctl download`.
-- **Kindle-friendly `.mobi` export** — if the Calibre desktop app is installed, a secondary "Download .mobi" button appears on the detail page and converts on demand (cached per book).
+- **Kindle-friendly `.mobi` export** — if the [Calibre](https://calibre-ebook.com) desktop app is installed, a secondary "Download .mobi" button appears on the detail page and converts on demand (cached per book). Title, author, publisher, description, and cover image are preserved in the output.
 - **LAN only** — no external dependencies. No account. No server round trip beyond your own Mac.
 
 ## How it compares to alternatives
