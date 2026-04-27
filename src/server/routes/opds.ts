@@ -11,12 +11,22 @@ const HTTP_TYPE = "application/atom+xml; charset=utf-8";
 // ─── /opds  →  navigation feed ──────────────────────────────────────────
 export function handleOpdsRoot(_ctx: Ctx, _url: URL): Response {
   const now = nowIso();
+  // Mirrors calibre-web's /opds output exactly: same link order, same
+  // attribute layout, same icon+search declarations even when search isn't
+  // a primary feature here. Some strict OPDS parsers (Xteink/Onyx built-in)
+  // structurally require the OpenSearch link pair before they accept the feed.
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
+  <icon>/static/favicon.ico</icon>
   <id>urn:uuid:00000000-0000-4000-8000-farenheit0000</id>
   <updated>${now}</updated>
   <link rel="self" href="/opds" type="application/atom+xml;profile=opds-catalog;kind=navigation"/>
-  <link rel="start" title="Start" href="/opds" type="application/atom+xml;profile=opds-catalog;kind=navigation"/>
+  <link rel="start" title="Start" href="/opds"
+        type="application/atom+xml;profile=opds-catalog;kind=navigation"/>
+  <link rel="search"
+      href="/opds/osd"
+      type="application/opensearchdescription+xml"/>
+  <link type="application/atom+xml" rel="search" title="Search" href="/opds/search/{searchTerms}" />
   <title>Farenheit</title>
   <author>
     <name>Farenheit</name>
@@ -29,6 +39,73 @@ export function handleOpdsRoot(_ctx: Ctx, _url: URL): Response {
     <updated>${now}</updated>
     <content type="text">All books in the library</content>
   </entry>
+</feed>`;
+  return xmlResponse(xml);
+}
+
+// ─── /opds/osd  →  OpenSearch description ──────────────────────────────
+// Some OPDS clients fetch this on first connect to discover search
+// capability; failing this request can cascade into "failed to parse feed"
+// even when /opds itself is valid.
+export function handleOpdsOsd(_ctx: Ctx, _url: URL): Response {
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
+   <LongName>Farenheit</LongName>
+   <ShortName>Farenheit</ShortName>
+   <Description>Farenheit eBook Catalog</Description>
+   <Url type="application/atom+xml" template="/opds/search?q={searchTerms}"/>
+   <SyndicationRight>open</SyndicationRight>
+   <Language>en</Language>
+   <OutputEncoding>UTF-8</OutputEncoding>
+   <InputEncoding>UTF-8</InputEncoding>
+</OpenSearchDescription>`;
+  return new Response(xml, {
+    status: 200,
+    headers: {
+      "Content-Type": "application/atom+xml; charset=utf-8",
+      "Cache-Control": "no-store",
+    },
+  });
+}
+
+// ─── /opds/search  →  acquisition feed of search results ────────────────
+// Minimum viable search so clients that probe it don't get a 404.
+export function handleOpdsSearch(ctx: Ctx, url: URL): Response {
+  // Path-style: /opds/search/<term> — OR query-style: ?q=<term>.
+  const pathTerm = url.pathname.startsWith("/opds/search/")
+    ? decodeURIComponent(url.pathname.slice("/opds/search/".length))
+    : "";
+  const q = (url.searchParams.get("q") ?? pathTerm).trim();
+
+  const all = ctx.store.list({}).filter((b) => b.onDisk);
+  const results = q
+    ? all.filter((b) => {
+        const needle = q.toLowerCase();
+        return (
+          b.title.toLowerCase().includes(needle) ||
+          (b.author ?? "").toLowerCase().includes(needle)
+        );
+      })
+    : [];
+  const entries = results
+    .slice(0, OPDS_PAGE_SIZE)
+    .map((b) => renderEntry(b, ctx.config.ebookConvertPath !== null))
+    .join("\n");
+
+  const now = nowIso();
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <id>urn:uuid:00000000-0000-4000-8000-farenheit0002</id>
+  <updated>${now}</updated>
+  <link rel="self" href="/opds/search?q=${encodeURIComponent(q)}" type="application/atom+xml;profile=opds-catalog;kind=acquisition"/>
+  <link rel="start" href="/opds" type="application/atom+xml;profile=opds-catalog;kind=navigation"/>
+  <link rel="up" href="/opds" type="application/atom+xml;profile=opds-catalog;kind=navigation"/>
+  <title>Search results: ${escapeXml(q)}</title>
+  <author>
+    <name>Farenheit</name>
+    <uri>https://github.com/peuic/farenheit</uri>
+  </author>
+${entries}
 </feed>`;
   return xmlResponse(xml);
 }
