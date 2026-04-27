@@ -73,7 +73,11 @@ function resolveDevice(req: Request, store: Store): { deviceId: string; setCooki
 async function route(ctx: Ctx, req: Request, url: URL): Promise<Response> {
   const p = url.pathname;
 
-  if (req.method !== "GET") return new Response("method not allowed", { status: 405 });
+  // HEAD is treated as GET — Bun.serve will strip the body automatically
+  // (and OPDS clients commonly probe with HEAD before downloading).
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    return new Response("method not allowed", { status: 405 });
+  }
   if (p === "/") return handleHome(ctx, url);
   if (p === "/search") return handleSearch(ctx, url);
   if (p === "/sync/retry") return handleSyncRetry(ctx);
