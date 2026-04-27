@@ -9,14 +9,21 @@ export type AuthConfig = { user: string; pass: string } | null;
  *     existed before this feature was added).
  *   - Auth configured + request originates from the local LAN (RFC 1918
  *     private range) → pass. Convenience for clients on the same Wi-Fi.
- *   - Auth configured + anything else (loopback from a tunnel daemon, public
- *     IP, etc.) → require Basic Auth.
+ *   - Auth configured + anything else → must authenticate via one of:
+ *       1. fh_auth cookie (set by a previous successful token visit)
+ *       2. ?token=<password> query param (sets the cookie for next time)
+ *       3. HTTP Basic Auth (Xteink/KOReader/curl)
  *
  * Tunnel daemons (cloudflared, tailscaled funnel, …) all relay incoming
  * traffic to the local service via 127.0.0.1, so loopback is treated as
  * "remote" — only direct LAN clients see the bypass.
  */
-export type AuthResult = { ok: true } | { ok: false; response: Response };
+export type AuthResult =
+  | { ok: true; setAuthCookie?: string }
+  | { ok: false; response: Response };
+
+const AUTH_COOKIE_NAME = "fh_auth";
+const AUTH_COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
 export function checkAuth(
   auth: AuthConfig,
@@ -26,15 +33,52 @@ export function checkAuth(
   if (!auth) return { ok: true };
   if (clientIP && isPrivateLanIP(clientIP)) return { ok: true };
 
-  const creds = parseBasicAuth(req.headers.get("authorization"));
-  if (!creds) return { ok: false, response: unauthorizedResponse() };
-
-  const userOk = constantTimeEquals(creds.user, auth.user);
-  const passOk = constantTimeEquals(creds.pass, auth.pass);
-  if (!userOk || !passOk) {
-    return { ok: false, response: unauthorizedResponse() };
+  // 1. Cookie set by a previous token visit (sticky session)
+  const cookieToken = parseAuthCookie(req.headers.get("cookie"));
+  if (cookieToken && constantTimeEquals(cookieToken, auth.pass)) {
+    return { ok: true };
   }
-  return { ok: true };
+
+  // 2. ?token=<password> in URL — for bookmark-friendly first-visit auth.
+  //    Validates against pass and sets the auth cookie for subsequent
+  //    requests in the same session.
+  const url = new URL(req.url);
+  const urlToken = url.searchParams.get("token");
+  if (urlToken && constantTimeEquals(urlToken, auth.pass)) {
+    return { ok: true, setAuthCookie: auth.pass };
+  }
+
+  // 3. Basic Auth — for command-line tools and dedicated OPDS readers.
+  const creds = parseBasicAuth(req.headers.get("authorization"));
+  if (creds) {
+    const userOk = constantTimeEquals(creds.user, auth.user);
+    const passOk = constantTimeEquals(creds.pass, auth.pass);
+    if (userOk && passOk) return { ok: true };
+  }
+
+  return { ok: false, response: unauthorizedResponse() };
+}
+
+export function buildAuthCookieHeader(token: string): string {
+  return [
+    `${AUTH_COOKIE_NAME}=${encodeURIComponent(token)}`,
+    `Max-Age=${AUTH_COOKIE_MAX_AGE}`,
+    "Path=/",
+    "SameSite=Lax",
+    "HttpOnly",
+    "Secure",
+  ].join("; ");
+}
+
+function parseAuthCookie(cookieHeader: string | null): string | null {
+  if (!cookieHeader) return null;
+  for (const part of cookieHeader.split(";")) {
+    const trimmed = part.trim();
+    if (trimmed.startsWith(`${AUTH_COOKIE_NAME}=`)) {
+      return decodeURIComponent(trimmed.slice(AUTH_COOKIE_NAME.length + 1));
+    }
+  }
+  return null;
 }
 
 /**
@@ -83,7 +127,7 @@ export function parseBasicAuth(
 }
 
 // Compare two strings without leaking length or content via timing.
-function constantTimeEquals(a: string, b: string): boolean {
+export function constantTimeEquals(a: string, b: string): boolean {
   const ab = Buffer.from(a, "utf-8");
   const bb = Buffer.from(b, "utf-8");
   if (ab.length !== bb.length) {

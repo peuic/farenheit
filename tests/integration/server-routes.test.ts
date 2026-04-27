@@ -166,6 +166,16 @@ describe("server routes", () => {
     expect(body).toContain("/download");
   });
 
+  test("GET /login renders the password form", async () => {
+    const r = await fetch(`${baseUrl}/login`);
+    expect(r.status).toBe(200);
+    expect(r.headers.get("content-type")).toContain("text/html");
+    const body = await r.text();
+    expect(body).toContain("Sign in");
+    expect(body).toContain('type="password"');
+    expect(body).toContain('action="/login"');
+  });
+
   test("GET /opds/books skips books that aren't on disk", async () => {
     const all = store.list({});
     const target = all[0]!;

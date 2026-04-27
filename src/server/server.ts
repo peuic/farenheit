@@ -11,7 +11,8 @@ import { handleDownload } from "./routes/download";
 import { handleDownloadMobi } from "./routes/downloadMobi";
 import { handleSearch } from "./routes/search";
 import { handleSyncRetry, handleBookSyncRetry } from "./routes/sync";
-import { checkAuth } from "./auth";
+import { checkAuth, buildAuthCookieHeader } from "./auth";
+import { handleLoginGet, handleLoginPost } from "./routes/login";
 import {
   handleOpdsRoot,
   handleOpdsBooks,
@@ -41,12 +42,35 @@ export function startServer(deps: ServerDeps): Server {
     port: config.port,
     async fetch(req: Request, srv): Promise<Response> {
       const url = new URL(req.url);
+      const p = url.pathname;
 
-      // Auth gate runs first — short-circuits before touching the store
-      // or generating a device cookie when credentials are wrong.
+      // /login is always reachable (otherwise nobody could authenticate).
+      if (p === "/login") {
+        if (req.method === "POST") return handleLoginPost(config.auth, req);
+        if (req.method === "GET" || req.method === "HEAD") {
+          return handleLoginGet(config.auth);
+        }
+        return new Response("method not allowed", { status: 405 });
+      }
+
+      // Auth gate runs before any other route handling.
       const clientIP = srv.requestIP(req)?.address ?? null;
       const authCheck = checkAuth(config.auth, req, clientIP);
-      if (!authCheck.ok) return authCheck.response;
+      if (!authCheck.ok) {
+        // Browser-style top-level navigation: redirect to /login (friendlier
+        // than a popup). OPDS clients, downloads and curl get the 401 path.
+        if (shouldRedirectToLogin(p, req)) {
+          return new Response(null, {
+            status: 302,
+            headers: { Location: "/login" },
+          });
+        }
+        return authCheck.response;
+      }
+
+      const authCookieHeader = authCheck.ok && "setAuthCookie" in authCheck && authCheck.setAuthCookie
+        ? buildAuthCookieHeader(authCheck.setAuthCookie)
+        : null;
 
       const { deviceId, setCookieHeader } = resolveDevice(req, store);
       const ctx: Ctx = {
@@ -65,9 +89,10 @@ export function startServer(deps: ServerDeps): Server {
         res = new Response("internal error", { status: 500 });
       }
 
-      if (setCookieHeader) {
+      if (setCookieHeader || authCookieHeader) {
         const h = new Headers(res.headers);
-        h.append("Set-Cookie", setCookieHeader);
+        if (setCookieHeader) h.append("Set-Cookie", setCookieHeader);
+        if (authCookieHeader) h.append("Set-Cookie", authCookieHeader);
         res = new Response(res.body, { status: res.status, headers: h });
       }
       return res;
@@ -75,6 +100,18 @@ export function startServer(deps: ServerDeps): Server {
   });
 
   return server;
+}
+
+// Decide whether an unauthenticated request should be redirected to the
+// HTML login page or get a Basic Auth 401 challenge. OPDS readers, asset
+// fetches, and clients already trying Basic Auth all want 401 — only
+// browser-style top-level navigation gets the friendlier redirect.
+function shouldRedirectToLogin(path: string, req: Request): boolean {
+  if (req.method !== "GET" && req.method !== "HEAD") return false;
+  if (path.startsWith("/opds")) return false;
+  if (req.headers.has("authorization")) return false;
+  if (/^\/book\/\d+\/(cover|download)/.test(path)) return false;
+  return true;
 }
 
 function resolveDevice(req: Request, store: Store): { deviceId: string; setCookieHeader: string | null } {
