@@ -161,8 +161,75 @@ Environment variables (all optional except `BOOKS_DIR`):
 | `HOST` | `0.0.0.0` | Bind address. Leave as-is for LAN access. |
 | `DATA_DIR` | `./data` | Where the SQLite index, cover thumbnails, MOBI cache, and log live. |
 | `EBOOK_CONVERT` | *(auto-detect)* | Override path to Calibre's `ebook-convert`. By default Farenheit looks in `/Applications/calibre.app/Contents/MacOS/` and common Homebrew prefixes. Leave empty to disable the MOBI export button. |
+| `FARENHEIT_USER` | *(unset)* | When set together with `FARENHEIT_PASS`, enables HTTP Basic Auth for any request that arrives via a tunnel. Direct LAN connections still pass through. |
+| `FARENHEIT_PASS` | *(unset)* | Companion to `FARENHEIT_USER`. Generate a strong one with `openssl rand -base64 24`. |
+
+See [`.env.example`](.env.example) for a copy-pasteable template.
 
 To change any of these after install, edit `~/Library/LaunchAgents/com.farenheit.plist` and run `farenheit restart`.
+
+## Public access via Cloudflare Tunnel
+
+Want to reach your library from outside your home Wi-Fi (a Kindle in a hotel, a Kobo at a friend's place, etc.) without opening ports on your router or moving your books to the cloud? Run Farenheit behind a free [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/). Books stay on your Mac, the connection is HTTPS-terminated by Cloudflare's edge, and Basic Auth keeps strangers out.
+
+### One-time setup
+
+1. **Pick a domain.** A real one you own (Cloudflare can sell you one for ~$10/yr) gives you a stable URL like `farenheit.yourdomain.com`. Without one you can use a `*.trycloudflare.com` URL — free but ephemeral, which breaks e-reader bookmarks.
+
+2. **Install `cloudflared` on your Mac:**
+   ```bash
+   brew install cloudflared
+   cloudflared tunnel login              # opens browser, authenticates
+   cloudflared tunnel create farenheit   # creates tunnel + credentials
+   ```
+
+3. **Configure routing** — create `~/.cloudflared/config.yml`:
+   ```yaml
+   tunnel: <your-tunnel-id-from-step-2>
+   credentials-file: /Users/<you>/.cloudflared/<your-tunnel-id>.json
+   ingress:
+     - hostname: farenheit.yourdomain.com
+       service: http://localhost:1111
+     - service: http_status:404
+   ```
+
+4. **Wire DNS** — Cloudflare creates the CNAME for you:
+   ```bash
+   cloudflared tunnel route dns farenheit farenheit.yourdomain.com
+   ```
+
+5. **Enable Basic Auth on Farenheit** — install (or reinstall) with credentials:
+   ```bash
+   FARENHEIT_USER=you \
+   FARENHEIT_PASS="$(openssl rand -base64 24)" \
+   ./bin/farenheit install
+   ```
+   Save that generated password somewhere safe — it's the only thing standing between strangers and your library.
+
+6. **Run the tunnel as a service:**
+   ```bash
+   sudo cloudflared service install
+   ```
+
+7. **Test from outside the LAN** (e.g. phone on cellular):
+   ```bash
+   curl -u you:<the-password> https://farenheit.yourdomain.com/opds
+   ```
+   Should return the OPDS feed. Direct LAN access (`http://<lan-ip>:1111/`) keeps working without auth.
+
+### Recommended hardening
+
+In your Cloudflare dashboard, all free:
+
+- **Security → Bots → Bot Fight Mode** — blocks known crawlers and scanners.
+- **Rules → Rate Limiting** — add a rule like *"if path equals `/opds` and rate exceeds 30 req/min, block 5 min"*. Cheap brute-force defense.
+- Add a `robots.txt` (Farenheit doesn't expose one yet, but the tunnel is auth-gated regardless).
+
+### Caveats
+
+- Your Mac must stay awake and online. Set **System Settings → Battery → Prevent automatic sleeping**. Closing the laptop lid still triggers sleep on most MacBooks unless you have an external display + AC + keyboard (clamshell mode), or override with `sudo pmset -a disablesleep 1`.
+- The launchd agent restarts Farenheit automatically; the Cloudflare service does the same for the tunnel. Both survive crashes and reboots.
+- Sharing copyrighted books over a public URL is your responsibility — `BOT_FIGHT_MODE` + auth + a private hostname mitigate exposure but don't eliminate it.
 
 ## Development
 

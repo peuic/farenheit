@@ -12,6 +12,7 @@ export type Config = {
   port: number;
   host: string;
   ebookConvertPath: string | null;
+  auth: { user: string; pass: string } | null;
 };
 
 export function loadConfig(env: Record<string, string | undefined> = process.env): Config {
@@ -38,6 +39,14 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
 
   const ebookConvertPath = findEbookConvert(env.EBOOK_CONVERT);
 
+  // Optional — when both FARENHEIT_USER and FARENHEIT_PASS are set, the
+  // server requires Basic Auth for any request that comes through a tunnel
+  // (i.e., carries cf-connecting-ip). Local LAN access stays open. When
+  // either env var is missing, auth is disabled entirely.
+  const authUser = env.FARENHEIT_USER?.trim();
+  const authPass = env.FARENHEIT_PASS?.trim();
+  const auth = authUser && authPass ? { user: authUser, pass: authPass } : null;
+
   return {
     booksDir: resolve(booksDir),
     dataDir,
@@ -48,5 +57,6 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     port,
     host: env.HOST ?? "0.0.0.0",
     ebookConvertPath,
+    auth,
   };
 }

@@ -26,6 +26,10 @@
     <string>1111</string>
     <key>DATA_DIR</key>
     <string>__PROJECT_DIR__/data</string>
+    <key>FARENHEIT_USER</key>
+    <string>__FARENHEIT_USER__</string>
+    <key>FARENHEIT_PASS</key>
+    <string>__FARENHEIT_PASS__</string>
   </dict>
 </dict>
 </plist>

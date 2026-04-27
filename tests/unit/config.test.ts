@@ -44,4 +44,17 @@ describe("loadConfig", () => {
     expect(cfg.host).toBe("127.0.0.1");
     expect(cfg.dataDir).toBe(tmpDir);
   });
+
+  test("auth is null by default", () => {
+    const cfg = loadConfig({ BOOKS_DIR: tmpDir });
+    expect(cfg.auth).toBeNull();
+  });
+
+  test("auth requires both user AND pass to activate", () => {
+    expect(loadConfig({ BOOKS_DIR: tmpDir, FARENHEIT_USER: "x" }).auth).toBeNull();
+    expect(loadConfig({ BOOKS_DIR: tmpDir, FARENHEIT_PASS: "y" }).auth).toBeNull();
+    expect(
+      loadConfig({ BOOKS_DIR: tmpDir, FARENHEIT_USER: "x", FARENHEIT_PASS: "y" }).auth,
+    ).toEqual({ user: "x", pass: "y" });
+  });
 });

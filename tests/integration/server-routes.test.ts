@@ -49,6 +49,7 @@ describe("server routes", () => {
       port: 0,
       host: "127.0.0.1",
       ebookConvertPath: null,
+      auth: null,
     };
     server = startServer({ config, store, skipICloudCheckOnDownload: true });
     baseUrl = `http://${server.hostname}:${server.port}`;

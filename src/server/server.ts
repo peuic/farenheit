@@ -11,6 +11,7 @@ import { handleDownload } from "./routes/download";
 import { handleDownloadMobi } from "./routes/downloadMobi";
 import { handleSearch } from "./routes/search";
 import { handleSyncRetry, handleBookSyncRetry } from "./routes/sync";
+import { checkAuth } from "./auth";
 import {
   handleOpdsRoot,
   handleOpdsBooks,
@@ -40,6 +41,12 @@ export function startServer(deps: ServerDeps): Server {
     port: config.port,
     async fetch(req: Request): Promise<Response> {
       const url = new URL(req.url);
+
+      // Auth gate runs first — short-circuits before touching the store
+      // or generating a device cookie when credentials are wrong.
+      const authCheck = checkAuth(config.auth, req);
+      if (!authCheck.ok) return authCheck.response;
+
       const { deviceId, setCookieHeader } = resolveDevice(req, store);
       const ctx: Ctx = {
         store,
