@@ -201,10 +201,14 @@ Want to reach your library from outside your home Wi-Fi (a Kindle in a hotel, a 
 5. **Enable Basic Auth on Farenheit** — install (or reinstall) with credentials:
    ```bash
    FARENHEIT_USER=you \
-   FARENHEIT_PASS="$(openssl rand -base64 24)" \
+   FARENHEIT_PASS="any-string-you-can-actually-type-on-a-Kindle" \
    ./bin/farenheit install
    ```
-   Save that generated password somewhere safe — it's the only thing standing between strangers and your library.
+   Pick something that's easy to type on a touchscreen keyboard but at
+   least 16 characters long — a passphrase like `papel-tijolo-fogo-cinza`
+   is far better here than `xK3+9aFz/QbV…`. With Cloudflare's rate
+   limiting, that's secure enough. If you really want randomness without
+   awkward symbols, use `openssl rand -hex 12`.
 
 6. **Run the tunnel as a service:**
    ```bash
