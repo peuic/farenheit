@@ -15,6 +15,7 @@ Optimized for the real-world constraints of e-ink displays: zero-JS markup, pagi
 - **Per-device download tracking** — each e-reader gets a cookie UUID; downloaded books are visibly marked so you don't re-download what's already on the device.
 - **iCloud-aware** — detects dataless placeholders (files in iCloud but not yet materialized locally), marks them in the UI with a retry action that invokes `brctl download`.
 - **Kindle-friendly `.mobi` export** — if the [Calibre](https://calibre-ebook.com) desktop app is installed, a secondary "Download .mobi" button appears on the detail page and converts on demand (cached per book). Title, author, publisher, description, and cover image are preserved in the output.
+- **OPDS feed** at `/opds` — point any OPDS reader (KOReader, the Xteink built-in browser, Aldiko, Marvin, …) at `http://<your-mac>:1111/opds` to browse and download the same library. Acquisition links for both EPUB and MOBI when Calibre is available.
 - **LAN only** — no external dependencies. No account. No server round trip beyond your own Mac.
 
 ## How it compares to alternatives
@@ -78,12 +79,19 @@ farenheit uninstall    # remove the launchd agent and the CLI symlink
    farenheit url
    # → http://192.168.1.42:1111
    ```
-3. On the e-reader, open the experimental web browser:
+3. On the e-reader, either open the web UI or wire up the OPDS feed:
+
+   **Web browser** (Kobo / Kindle / any built-in browser):
    - **Kobo:** `More → Settings → Beta Features → Web Browser`
    - **Kindle:** `Menu → Experimental → Web Browser` (older models only)
-   - **Boox / reMarkable / others:** any built-in browser works if it's WebKit-based
-4. Enter the URL. Bookmark it.
-5. Tap a book → tap **Download** → the epub is saved to the device library.
+   - Enter the LAN URL. Bookmark it.
+
+   **OPDS reader** (Xteink / KOReader / Aldiko / Marvin / etc.):
+   - Add a new OPDS catalog with URL `http://<lan-ip>:1111/opds`.
+   - The reader will list every book on disk with covers, descriptions,
+     and download links for `.epub` (and `.mobi` when Calibre is installed).
+
+4. Tap a book → **Download** → the file is saved to the device library.
 
 ## Configuration
 
