@@ -15,7 +15,7 @@ Optimized for the real-world constraints of e-ink displays: zero-JS markup, pagi
 - **Per-device download tracking** — each e-reader gets a cookie UUID; downloaded books are visibly marked so you don't re-download what's already on the device.
 - **iCloud-aware** — detects dataless placeholders (files in iCloud but not yet materialized locally), marks them in the UI with a retry action that invokes `brctl download`.
 - **Kindle-friendly `.mobi` export** — if the [Calibre](https://calibre-ebook.com) desktop app is installed, a secondary "Download .mobi" button appears on the detail page and converts on demand (cached per book). Title, author, publisher, description, and cover image are preserved in the output.
-- **OPDS feed** at `/opds` — point any OPDS reader (KOReader, the Xteink built-in browser, Aldiko, Marvin, …) at `http://<your-mac>:1111/opds` to browse and download the same library. Acquisition links for both EPUB and MOBI when Calibre is available.
+- **OPDS catalog** at `/opds` — point any OPDS reader (KOReader, the Xteink/Onyx built-in reader, Aldiko, Marvin, …) at `http://<your-mac>:1111/opds` and browse Recent / Alphabetical / By Author. Acquisition links for both EPUB and MOBI when Calibre is available. See [OPDS catalog](#opds-catalog) below for the full setup.
 - **LAN only** — no external dependencies. No account. No server round trip beyond your own Mac.
 
 ## How it compares to alternatives
@@ -93,6 +93,63 @@ farenheit uninstall    # remove the launchd agent and the CLI symlink
 
 4. Tap a book → **Download** → the file is saved to the device library.
 
+## OPDS catalog
+
+[OPDS](https://opds.io) (Open Publication Distribution System) is the de-facto Atom-based protocol that nearly every dedicated e-reader app speaks: KOReader, Aldiko, Marvin, Moon+ Reader, the Xteink/Onyx built-in reader, and many more. It gives you a clean catalog UI inside your reading app instead of going through the web browser.
+
+### Setup (one URL)
+
+In your reader app, find "Add OPDS catalog" (label varies — "Add catalog", "Add network library", "Add server"). Paste:
+
+```
+http://<lan-ip>:1111/opds
+```
+
+That's it. The reader will fetch the navigation feed and show you what's available.
+
+### Catalog structure
+
+Farenheit serves a small navigation tree, mirroring what calibre-web does so strict OPDS clients accept it without complaints:
+
+```
+/opds                       navigation root (3 sub-feeds)
+  ├─ /opds/recent           top 30 most recently added
+  ├─ /opds/alphabetical     all books sorted by title (paginated, 30/page)
+  └─ /opds/authors          author index → /opds/author/<name>
+/opds/search?q=<term>       full-text search across title + author
+/opds/osd                   OpenSearch description (clients fetch this on connect)
+```
+
+Each book entry carries:
+
+- Title, author, last-updated timestamp
+- Cover and thumbnail (`<link rel="…/image">`, `<link rel="…/image/thumbnail">`)
+- Description from the epub metadata, when available, as `<content type="xhtml">`
+- Acquisition links for `.epub` (always) and `.mobi` (if [Calibre](https://calibre-ebook.com) is installed) — sized with explicit `length="…"` so clients can pre-validate before downloading
+
+### Tested clients
+
+| Reader | Status |
+|---|---|
+| Xteink / Onyx Boox built-in OPDS reader | ✅ |
+| KOReader | ✅ |
+| Aldiko / Moon+ Reader (Android) | ✅ |
+| Marvin (iOS) | should work — same endpoints calibre-web speaks |
+
+### Authentication (optional)
+
+If you set `FARENHEIT_USER` / `FARENHEIT_PASS` (see [Configuration](#configuration)), OPDS clients prompt for credentials the first time and store them. For clients that don't have a credentials field, paste the URL with embedded auth:
+
+```
+http://<user>:<pass>@<lan-ip>:1111/opds
+```
+
+LAN access keeps working without auth — the auth check only kicks in for tunneled / remote requests.
+
+### Diagnostics
+
+- `http://<lan-ip>:1111/opds/test` — minimal hardcoded acquisition feed with a single dummy entry. If the real `/opds` fails to parse on a device but `/opds/test` works, the issue is in real-book metadata; open an issue with the failing book's title.
+
 ## Configuration
 
 Environment variables (all optional except `BOOKS_DIR`):
@@ -116,7 +173,7 @@ bun tests/fixtures/build.ts    # one-time: build epub test fixtures
 # Run the server directly (no launchd)
 BOOKS_DIR="$HOME/Books" bun run src/index.ts
 
-# Tests (43 across unit / integration / e2e)
+# Tests (52 across unit / integration / e2e)
 bun test
 ```
 
