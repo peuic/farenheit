@@ -136,7 +136,7 @@ describe("server routes", () => {
     expect(await r.text()).toContain("Calibre");
   });
 
-  test("GET /opds returns the navigation feed pointing to /opds/books", async () => {
+  test("GET /opds returns a navigation feed with sub-feeds", async () => {
     const r = await fetch(`${baseUrl}/opds`);
     expect(r.status).toBe(200);
     const ct = r.headers.get("content-type") ?? "";
@@ -144,8 +144,12 @@ describe("server routes", () => {
     const body = await r.text();
     expect(body).toContain("<?xml");
     expect(body).toContain("<title>Farenheit</title>");
-    expect(body).toContain("All books");
-    expect(body).toContain("/opds/books");
+    expect(body).toContain("Recent");
+    expect(body).toContain("Alphabetical");
+    expect(body).toContain("By Author");
+    expect(body).toContain("/opds/recent");
+    expect(body).toContain("/opds/alphabetical");
+    expect(body).toContain("/opds/authors");
   });
 
   test("GET /opds/books returns an acquisition feed", async () => {

@@ -11,7 +11,17 @@ import { handleDownload } from "./routes/download";
 import { handleDownloadMobi } from "./routes/downloadMobi";
 import { handleSearch } from "./routes/search";
 import { handleSyncRetry, handleBookSyncRetry } from "./routes/sync";
-import { handleOpdsRoot, handleOpdsBooks, handleOpdsTest, handleOpdsOsd, handleOpdsSearch } from "./routes/opds";
+import {
+  handleOpdsRoot,
+  handleOpdsBooks,
+  handleOpdsRecent,
+  handleOpdsAlphabetical,
+  handleOpdsAuthors,
+  handleOpdsAuthor,
+  handleOpdsTest,
+  handleOpdsOsd,
+  handleOpdsSearch,
+} from "./routes/opds";
 import { renderNotFound } from "./templates/notFound";
 import type { Ctx } from "./routes/context";
 
@@ -82,7 +92,11 @@ async function route(ctx: Ctx, req: Request, url: URL): Promise<Response> {
   if (p === "/search") return handleSearch(ctx, url);
   if (p === "/sync/retry") return handleSyncRetry(ctx);
   if (p === "/opds" || p === "/opds/") return handleOpdsRoot(ctx, url);
+  if (p === "/opds/recent" || p === "/opds/recent/") return handleOpdsRecent(ctx, url);
+  if (p === "/opds/alphabetical" || p === "/opds/alphabetical/") return handleOpdsAlphabetical(ctx, url);
   if (p === "/opds/books" || p === "/opds/books/") return handleOpdsBooks(ctx, url);
+  if (p === "/opds/authors" || p === "/opds/authors/") return handleOpdsAuthors(ctx, url);
+  if (p.startsWith("/opds/author/")) return handleOpdsAuthor(ctx, p.slice("/opds/author/".length));
   if (p === "/opds/test" || p === "/opds/test/") return handleOpdsTest(ctx, url);
   if (p === "/opds/osd" || p === "/opds/osd/") return handleOpdsOsd(ctx, url);
   if (p === "/opds/search" || p.startsWith("/opds/search/")) return handleOpdsSearch(ctx, url);
