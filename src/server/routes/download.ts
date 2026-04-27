@@ -32,18 +32,19 @@ export async function handleDownload(ctx: Ctx, idStr: string): Promise<Response>
   // percent-encoded bytes; they match the extension on the literal string.
   const downloadFilename = `${asciiSlug(book.filename.replace(/\.epub$/i, "")) || "book"}.epub`;
 
-  // Explicit Content-Length (instead of chunked) + Last-Modified — strict
-  // OPDS clients refuse downloads sent with Transfer-Encoding: chunked
-  // because they can't pre-validate the file size declared in the feed.
+  // Bun.serve uses Transfer-Encoding: chunked when the response body is a
+  // Bun.file stream and ignores any Content-Length header we add. Strict
+  // OPDS clients (Onyx/Xteink) reject chunked downloads and can't validate
+  // against the <link length="…"> declared in the feed. Read the full file
+  // into a Uint8Array — Bun then sets Content-Length automatically.
   const stat = statSync(fullPath);
-  const lastModified = new Date(stat.mtimeMs).toUTCString();
+  const bytes = await Bun.file(fullPath).bytes();
 
-  return new Response(Bun.file(fullPath), {
+  return new Response(bytes, {
     headers: {
       "Content-Type": "application/epub+zip",
-      "Content-Length": String(stat.size),
       "Content-Disposition": `attachment; filename="${downloadFilename}"`,
-      "Last-Modified": lastModified,
+      "Last-Modified": new Date(stat.mtimeMs).toUTCString(),
       "Cache-Control": "no-cache",
     },
   });

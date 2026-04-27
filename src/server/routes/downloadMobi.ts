@@ -52,10 +52,11 @@ export async function handleDownloadMobi(ctx: Ctx, idStr: string): Promise<Respo
   // filenames) confuse its extension check. Reduce to pure ASCII.
   const downloadFilename = `${asciiSlug(book.filename.replace(/\.epub$/i, "")) || "book"}.mobi`;
   const stat = statSync(mobiPath);
-  return new Response(Bun.file(mobiPath), {
+  // Read fully into memory — Bun sends chunked when given a file stream.
+  const bytes = await Bun.file(mobiPath).bytes();
+  return new Response(bytes, {
     headers: {
       "Content-Type": "application/x-mobipocket-ebook",
-      "Content-Length": String(stat.size),
       "Content-Disposition": `attachment; filename="${downloadFilename}"`,
       "Last-Modified": new Date(stat.mtimeMs).toUTCString(),
       "Cache-Control": "no-cache",
