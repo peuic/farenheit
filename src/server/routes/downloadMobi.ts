@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { existsSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import { renderNotFound } from "../templates/notFound";
 import { htmlResponse } from "./home";
 import { convertEpubToMobi } from "../../converter";
@@ -51,11 +51,14 @@ export async function handleDownloadMobi(ctx: Ctx, idStr: string): Promise<Respo
   // encoded non-ASCII characters (spaces, accents, parens from Z-Library
   // filenames) confuse its extension check. Reduce to pure ASCII.
   const downloadFilename = `${asciiSlug(book.filename.replace(/\.epub$/i, "")) || "book"}.mobi`;
+  const stat = statSync(mobiPath);
   return new Response(Bun.file(mobiPath), {
     headers: {
       "Content-Type": "application/x-mobipocket-ebook",
+      "Content-Length": String(stat.size),
       "Content-Disposition": `attachment; filename="${downloadFilename}"`,
-      "Cache-Control": "no-store",
+      "Last-Modified": new Date(stat.mtimeMs).toUTCString(),
+      "Cache-Control": "no-cache",
     },
   });
 }

@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { existsSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import { renderNotFound } from "../templates/notFound";
 import { htmlResponse } from "./home";
 import { ensureMaterialized } from "../../indexer/icloud";
@@ -27,17 +27,24 @@ export async function handleDownload(ctx: Ctx, idStr: string): Promise<Response>
 
   ctx.store.markDownloaded(ctx.deviceId, book.id);
 
-  // Strict OPDS clients (Onyx/Xteink) and the Kindle browser both reject
-  // downloads whose Content-Disposition filename contains percent-encoded
-  // bytes — they look at the literal string for the extension. Reduce to
-  // pure ASCII (same logic used for the MOBI route).
+  // ASCII-only filename — strict OPDS clients (Onyx/Xteink) and the Kindle
+  // browser reject downloads whose Content-Disposition filename has
+  // percent-encoded bytes; they match the extension on the literal string.
   const downloadFilename = `${asciiSlug(book.filename.replace(/\.epub$/i, "")) || "book"}.epub`;
+
+  // Explicit Content-Length (instead of chunked) + Last-Modified — strict
+  // OPDS clients refuse downloads sent with Transfer-Encoding: chunked
+  // because they can't pre-validate the file size declared in the feed.
+  const stat = statSync(fullPath);
+  const lastModified = new Date(stat.mtimeMs).toUTCString();
 
   return new Response(Bun.file(fullPath), {
     headers: {
       "Content-Type": "application/epub+zip",
+      "Content-Length": String(stat.size),
       "Content-Disposition": `attachment; filename="${downloadFilename}"`,
-      "Cache-Control": "no-store",
+      "Last-Modified": lastModified,
+      "Cache-Control": "no-cache",
     },
   });
 }
