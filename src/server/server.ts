@@ -97,7 +97,7 @@ async function route(ctx: Ctx, req: Request, url: URL): Promise<Response> {
   m = p.match(/^\/book\/(\d+)\/download\.mobi\/?$/);
   if (m) return handleDownloadMobi(ctx, m[1]!);
 
-  m = p.match(/^\/book\/(\d+)\/download\/?$/);
+  m = p.match(/^\/book\/(\d+)\/download(?:\.epub)?\/?$/);
   if (m) return handleDownload(ctx, m[1]!);
 
   m = p.match(/^\/book\/(\d+)\/sync-retry\/?$/);

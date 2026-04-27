@@ -213,7 +213,7 @@ function renderEntry(b: BookWithDownload, mobiAvailable: boolean): string {
     lines.push(`    <link type="image/jpeg" href="${escapeXml(coverUrl)}" rel="http://opds-spec.org/image"/>`);
     lines.push(`    <link type="image/jpeg" href="${escapeXml(coverUrl)}" rel="http://opds-spec.org/image/thumbnail"/>`);
   }
-  lines.push(`    <link rel="http://opds-spec.org/acquisition" href="/book/${b.id}/download" length="${b.sizeBytes}" title="EPUB" mtime="${updated}" type="application/epub+zip"/>`);
+  lines.push(`    <link rel="http://opds-spec.org/acquisition" href="/book/${b.id}/download.epub" length="${b.sizeBytes}" title="EPUB" mtime="${updated}" type="application/epub+zip"/>`);
   if (mobiAvailable) {
     lines.push(`    <link rel="http://opds-spec.org/acquisition" href="/book/${b.id}/download.mobi" title="MOBI" mtime="${updated}" type="application/x-mobipocket-ebook"/>`);
   }
