@@ -159,8 +159,6 @@ describe("server routes", () => {
     expect(body).toContain("Valid Title");
     expect(body).toContain('rel="http://opds-spec.org/acquisition"');
     expect(body).toContain('type="application/epub+zip"');
-    expect(body).toContain('<content type="xhtml">');
-    expect(body).toContain('xmlns="http://www.w3.org/1999/xhtml"');
     expect(body).toContain("/book/");
     expect(body).toContain("/download");
   });

@@ -13,6 +13,32 @@ const NAV_LINK_TYPE = "application/atom+xml;profile=opds-catalog";
 const ACQ_LINK_TYPE = "application/atom+xml;profile=opds-catalog;kind=acquisition";
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
+// ─── /opds/test  →  minimal hardcoded feed for diagnosing parser quirks ──
+// If this loads on the Xteink but /opds/books doesn't, the issue is in the
+// real entries (special chars, length, etc.). If even this fails, the
+// problem is structural and we need to iterate on the feed shape itself.
+export function handleOpdsTest(_ctx: Ctx, url: URL): Response {
+  const base = `${url.protocol}//${url.host}`;
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Farenheit Test</title>
+  <id>urn:farenheit:test</id>
+  <updated>2026-01-01T00:00:00Z</updated>
+  <author><name>Farenheit</name></author>
+  <link rel="self" href="${base}/opds/test" type="${ACQ_LINK_TYPE}"/>
+  <link rel="start" href="${base}/opds" type="${NAV_LINK_TYPE}"/>
+  <entry>
+    <title>Test Book</title>
+    <id>urn:farenheit:test:1</id>
+    <updated>2026-01-01T00:00:00Z</updated>
+    <author><name>Test Author</name></author>
+    <content type="text">A minimal test entry with only ASCII characters.</content>
+    <link rel="http://opds-spec.org/acquisition" type="application/epub+zip" href="${base}/book/1/download"/>
+  </entry>
+</feed>`;
+  return xmlResponse(xml);
+}
+
 // ─── /opds  →  navigation feed ──────────────────────────────────────────
 export function handleOpdsRoot(ctx: Ctx, url: URL): Response {
   const base = `${url.protocol}//${url.host}`;
@@ -124,8 +150,10 @@ function renderEntry(
   const id = `urn:farenheit:book:${b.id}`;
   const updated = new Date(b.indexedAt || b.addedAt).toISOString();
 
-  // Calibre-web's element order — strict clients depend on it:
-  // title → id → updated → author → content → links (cover, thumbnail, acquisition).
+  // Minimal entry — every Atom-mandatory element only: title, id, updated,
+  // author, plus the cover and acquisition links. No <content>/<summary>:
+  // dropping descriptions removes whole categories of parser-confounding
+  // input (curly quotes, soft hyphens, leftover HTML entities, long text).
   const lines: string[] = [];
   lines.push(`  <entry>`);
   lines.push(`    <title>${escapeXml(b.title)}</title>`);
@@ -136,14 +164,6 @@ function renderEntry(
     lines.push(`    <author><name>${escapeXml(b.author)}</name></author>`);
   }
 
-  // Always emit <content type="xhtml"> with an inner xhtml-namespaced div.
-  // Calibre-web uses xhtml content (never <summary>); strict parsers require
-  // the inner namespaced div or they reject the entry.
-  const desc = b.description ? stripHtmlPlain(b.description) : "";
-  const contentText = desc || (b.author ? `${b.title} — ${b.author}` : b.title);
-  lines.push(`    <content type="xhtml"><div xmlns="${XHTML_NS}">${escapeXml(contentText)}</div></content>`);
-
-  // Cover before thumbnail before acquisition — calibre-web order.
   if (b.coverFilename) {
     const coverUrl = `${base}/book/${b.id}/cover?v=${b.mtime}`;
     lines.push(`    <link rel="http://opds-spec.org/image" type="image/jpeg" href="${escapeXml(coverUrl)}"/>`);
@@ -174,17 +194,3 @@ function escapeXml(s: string): string {
     .replace(/'/g, "&apos;");
 }
 
-function stripHtmlPlain(raw: string): string {
-  return raw
-    .replace(/<\s*br\s*\/?>/gi, " ")
-    .replace(/<\s*\/\s*p\s*>/gi, " ")
-    .replace(/<[^>]+>/g, "")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&quot;/gi, "\"")
-    .replace(/&#39;/gi, "'")
-    .replace(/\s+/g, " ")
-    .trim();
-}
