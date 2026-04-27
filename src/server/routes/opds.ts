@@ -1,88 +1,59 @@
 import type { Ctx } from "./context";
 import type { BookWithDownload } from "../../store/types";
 
-// OPDS clients (KOReader, Aldiko, the Xteink/Onyx built-in reader, …) handle
-// larger feed batches than the web UI. 30 per page is the common sweet spot.
 export const OPDS_PAGE_SIZE = 30;
 
-// Calibre-web — the de-facto reference implementation for strict OPDS readers
-// — serves bare `application/atom+xml`. The `profile=opds-catalog;kind=…`
-// flavour is only used for `<link type="…">` attributes, NOT the HTTP header.
-const HTTP_TYPE = "application/atom+xml;charset=utf-8";
-const NAV_LINK_TYPE = "application/atom+xml;profile=opds-catalog";
-const ACQ_LINK_TYPE = "application/atom+xml;profile=opds-catalog;kind=acquisition";
-const XHTML_NS = "http://www.w3.org/1999/xhtml";
-
-// ─── /opds/test  →  minimal hardcoded feed for diagnosing parser quirks ──
-// If this loads on the Xteink but /opds/books doesn't, the issue is in the
-// real entries (special chars, length, etc.). If even this fails, the
-// problem is structural and we need to iterate on the feed shape itself.
-export function handleOpdsTest(_ctx: Ctx, url: URL): Response {
-  const base = `${url.protocol}//${url.host}`;
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom">
-  <title>Farenheit Test</title>
-  <id>urn:farenheit:test</id>
-  <updated>2026-01-01T00:00:00Z</updated>
-  <author><name>Farenheit</name></author>
-  <link rel="self" href="${base}/opds/test" type="${ACQ_LINK_TYPE}"/>
-  <link rel="start" href="${base}/opds" type="${NAV_LINK_TYPE}"/>
-  <entry>
-    <title>Test Book</title>
-    <id>urn:farenheit:test:1</id>
-    <updated>2026-01-01T00:00:00Z</updated>
-    <author><name>Test Author</name></author>
-    <content type="text">A minimal test entry with only ASCII characters.</content>
-    <link rel="http://opds-spec.org/acquisition" type="application/epub+zip" href="${base}/book/1/download"/>
-  </entry>
-</feed>`;
-  return xmlResponse(xml);
-}
+// Mirrors calibre-web exactly: bare 'application/atom+xml' for the HTTP
+// header (with the space before charset that calibre-web uses), the
+// profile/kind only inside <link type=…> attributes.
+const HTTP_TYPE = "application/atom+xml; charset=utf-8";
 
 // ─── /opds  →  navigation feed ──────────────────────────────────────────
-export function handleOpdsRoot(ctx: Ctx, url: URL): Response {
-  const base = `${url.protocol}//${url.host}`;
-  const total = ctx.store.list({}).filter((b) => b.onDisk).length;
-  const now = new Date().toISOString();
-
+export function handleOpdsRoot(_ctx: Ctx, _url: URL): Response {
+  const now = nowIso();
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
-  <title>Farenheit</title>
-  <id>urn:farenheit:catalog</id>
+  <id>urn:uuid:00000000-0000-4000-8000-farenheit0000</id>
   <updated>${now}</updated>
-  <author><name>Farenheit</name></author>
-  <link rel="self" href="${base}/opds" type="${NAV_LINK_TYPE}"/>
-  <link rel="start" href="${base}/opds" type="${NAV_LINK_TYPE}"/>
+  <link rel="self" href="/opds" type="application/atom+xml;profile=opds-catalog;kind=navigation"/>
+  <link rel="start" title="Start" href="/opds" type="application/atom+xml;profile=opds-catalog;kind=navigation"/>
+  <title>Farenheit</title>
+  <author>
+    <name>Farenheit</name>
+    <uri>https://github.com/peuic/farenheit</uri>
+  </author>
   <entry>
     <title>All books</title>
-    <id>urn:farenheit:catalog:books</id>
+    <link href="/opds/books" type="application/atom+xml;profile=opds-catalog"/>
+    <id>/opds/books</id>
     <updated>${now}</updated>
-    <content type="text">${total} ${total === 1 ? "book" : "books"} ready to read.</content>
-    <link rel="subsection" href="${base}/opds/books" type="${NAV_LINK_TYPE}"/>
+    <content type="text">All books in the library</content>
   </entry>
 </feed>`;
-
   return xmlResponse(xml);
 }
 
-// ─── /opds/books?page=N  →  acquisition feed ───────────────────────────
+// ─── /opds/books?offset=N  →  acquisition feed ─────────────────────────
+// Calibre-web paginates via ?offset=… (not ?page=…). Match that convention.
 export function handleOpdsBooks(ctx: Ctx, url: URL): Response {
-  const rawPage = Number.parseInt(url.searchParams.get("page") ?? "1", 10);
-  const page = Number.isNaN(rawPage) || rawPage < 1 ? 1 : rawPage;
-
   const all = ctx.store.list({}).filter((b) => b.onDisk);
   const total = all.length;
-  const totalPages = Math.max(1, Math.ceil(total / OPDS_PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const offset = (currentPage - 1) * OPDS_PAGE_SIZE;
+
+  const rawOffset = Number.parseInt(url.searchParams.get("offset") ?? "0", 10);
+  const offset = Number.isNaN(rawOffset) || rawOffset < 0 ? 0 : Math.min(rawOffset, Math.max(0, total - 1));
   const books = all.slice(offset, offset + OPDS_PAGE_SIZE);
 
-  const base = `${url.protocol}//${url.host}`;
+  const hasNext = offset + OPDS_PAGE_SIZE < total;
+  const hasPrev = offset > 0;
+  const nextOffset = offset + OPDS_PAGE_SIZE;
+  const prevOffset = Math.max(0, offset - OPDS_PAGE_SIZE);
+
   const xml = renderAcquisitionFeed(books, {
-    base,
-    page: currentPage,
-    totalPages,
     total,
+    hasNext,
+    hasPrev,
+    nextOffset,
+    prevOffset,
     mobiAvailable: ctx.config.ebookConvertPath !== null,
   });
 
@@ -100,88 +71,84 @@ function xmlResponse(xml: string): Response {
 }
 
 type RenderOpts = {
-  base: string;
-  page: number;
-  totalPages: number;
   total: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+  nextOffset: number;
+  prevOffset: number;
   mobiAvailable: boolean;
 };
 
 function renderAcquisitionFeed(books: BookWithDownload[], opts: RenderOpts): string {
-  const { base, page, totalPages, total, mobiAvailable } = opts;
-  const now = new Date().toISOString();
+  const { hasNext, hasPrev, nextOffset, prevOffset, mobiAvailable } = opts;
+  const now = nowIso();
 
-  const selfHref = page > 1 ? `${base}/opds/books?page=${page}` : `${base}/opds/books`;
-  const startHref = `${base}/opds`;
-  const upHref = `${base}/opds`;
-  const firstHref = `${base}/opds/books`;
-  const lastHref = totalPages > 1 ? `${base}/opds/books?page=${totalPages}` : firstHref;
-  const nextLink = page < totalPages
-    ? `<link rel="next" href="${base}/opds/books?page=${page + 1}" type="${ACQ_LINK_TYPE}"/>`
+  // Calibre-web uses the SAME hardcoded UUID for every feed it serves —
+  // we mirror that pattern (one for nav, one for book listings).
+  const linkType = "application/atom+xml;profile=opds-catalog;type=feed;kind=navigation";
+
+  const firstLink = hasPrev
+    ? `\n  <link rel="first" href="/opds/books" type="${linkType}"/>`
     : "";
-  const prevLink = page > 1
-    ? `<link rel="previous" href="${page > 2 ? `${base}/opds/books?page=${page - 1}` : firstHref}" type="${ACQ_LINK_TYPE}"/>`
+  const nextLink = hasNext
+    ? `\n  <link rel="next" title="Next" href="/opds/books?offset=${nextOffset}" type="${linkType}"/>`
+    : "";
+  const prevLink = hasPrev
+    ? `\n  <link rel="previous" href="/opds/books?offset=${prevOffset}" type="${linkType}"/>`
     : "";
 
-  const entries = books.map((b) => renderEntry(b, base, mobiAvailable)).join("\n");
+  const entries = books.map((b) => renderEntry(b, mobiAvailable)).join("\n");
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
-  <title>Farenheit — All books</title>
-  <id>urn:farenheit:catalog:books${page > 1 ? `:page:${page}` : ""}</id>
+  <id>urn:uuid:00000000-0000-4000-8000-farenheit0001</id>
   <updated>${now}</updated>
-  <author><name>Farenheit</name></author>
-  <link rel="self" href="${selfHref}" type="${ACQ_LINK_TYPE}"/>
-  <link rel="start" href="${startHref}" type="${NAV_LINK_TYPE}"/>
-  <link rel="up" href="${upHref}" type="${NAV_LINK_TYPE}"/>
-  <link rel="first" href="${firstHref}" type="${ACQ_LINK_TYPE}"/>
-  <link rel="last" href="${lastHref}" type="${ACQ_LINK_TYPE}"/>
-  ${nextLink}
-  ${prevLink}
+  <link rel="self" href="/opds/books" type="${linkType}"/>
+  <link rel="start" href="/opds" type="application/atom+xml;profile=opds-catalog;type=feed;kind=navigation"/>
+  <link rel="up" href="/opds" type="application/atom+xml;profile=opds-catalog;type=feed;kind=navigation"/>${firstLink}${nextLink}${prevLink}
+  <title>Farenheit</title>
+  <author>
+    <name>Farenheit</name>
+    <uri>https://github.com/peuic/farenheit</uri>
+  </author>
 ${entries}
 </feed>`;
 }
 
-function renderEntry(
-  b: BookWithDownload,
-  base: string,
-  mobiAvailable: boolean,
-): string {
+function renderEntry(b: BookWithDownload, mobiAvailable: boolean): string {
   const id = `urn:farenheit:book:${b.id}`;
-  const updated = new Date(b.indexedAt || b.addedAt).toISOString();
+  const updated = new Date(b.indexedAt || b.addedAt)
+    .toISOString()
+    .replace(/\.\d+Z$/, "+00:00"); // calibre-web format: …+00:00 instead of …Z
 
-  // Minimal entry — every Atom-mandatory element only: title, id, updated,
-  // author, plus the cover and acquisition links. No <content>/<summary>:
-  // dropping descriptions removes whole categories of parser-confounding
-  // input (curly quotes, soft hyphens, leftover HTML entities, long text).
   const lines: string[] = [];
   lines.push(`  <entry>`);
   lines.push(`    <title>${escapeXml(b.title)}</title>`);
   lines.push(`    <id>${id}</id>`);
   lines.push(`    <updated>${updated}</updated>`);
-
   if (b.author) {
-    lines.push(`    <author><name>${escapeXml(b.author)}</name></author>`);
+    lines.push(`    <author>`);
+    lines.push(`      <name>${escapeXml(b.author)}</name>`);
+    lines.push(`    </author>`);
   }
-
   if (b.coverFilename) {
-    const coverUrl = `${base}/book/${b.id}/cover?v=${b.mtime}`;
-    lines.push(`    <link rel="http://opds-spec.org/image" type="image/jpeg" href="${escapeXml(coverUrl)}"/>`);
-    lines.push(`    <link rel="http://opds-spec.org/image/thumbnail" type="image/jpeg" href="${escapeXml(coverUrl)}"/>`);
+    const coverUrl = `/book/${b.id}/cover?v=${b.mtime}`;
+    lines.push(`    <link type="image/jpeg" href="${escapeXml(coverUrl)}" rel="http://opds-spec.org/image"/>`);
+    lines.push(`    <link type="image/jpeg" href="${escapeXml(coverUrl)}" rel="http://opds-spec.org/image/thumbnail"/>`);
   }
-
-  lines.push(`    <link rel="http://opds-spec.org/acquisition" type="application/epub+zip" href="${escapeXml(`${base}/book/${b.id}/download`)}" title="EPUB"/>`);
+  lines.push(`    <link rel="http://opds-spec.org/acquisition" href="/book/${b.id}/download" length="${b.sizeBytes}" title="EPUB" mtime="${updated}" type="application/epub+zip"/>`);
   if (mobiAvailable) {
-    lines.push(`    <link rel="http://opds-spec.org/acquisition" type="application/x-mobipocket-ebook" href="${escapeXml(`${base}/book/${b.id}/download.mobi`)}" title="MOBI"/>`);
+    lines.push(`    <link rel="http://opds-spec.org/acquisition" href="/book/${b.id}/download.mobi" title="MOBI" mtime="${updated}" type="application/x-mobipocket-ebook"/>`);
   }
-
   lines.push(`  </entry>`);
   return lines.join("\n");
 }
 
-// XML 1.0 forbids most control chars. Strip them — a single stray form-feed
-// or vertical-tab in an epub description (common for PDF-extracted text)
-// is enough to make a strict parser reject the whole document.
+function nowIso(): string {
+  // calibre-web format: "%Y-%m-%dT%H:%M:%S+00:00" (no fractional seconds, +00:00 not Z)
+  return new Date().toISOString().replace(/\.\d+Z$/, "+00:00");
+}
+
 const ILLEGAL_XML_CHARS = /[\x00-\x08\x0B\x0C\x0E-\x1F￾￿]/g;
 
 function escapeXml(s: string): string {
@@ -194,3 +161,29 @@ function escapeXml(s: string): string {
     .replace(/'/g, "&apos;");
 }
 
+// ─── /opds/test ─────────────────────────────────────────────────────────
+// Static minimal acquisition feed for diagnosing parser quirks.
+export function handleOpdsTest(_ctx: Ctx, _url: URL): Response {
+  const now = nowIso();
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <id>urn:uuid:00000000-0000-4000-8000-farenheit0099</id>
+  <updated>${now}</updated>
+  <link rel="self" href="/opds/test" type="application/atom+xml;profile=opds-catalog;kind=acquisition"/>
+  <link rel="start" href="/opds" type="application/atom+xml;profile=opds-catalog;kind=navigation"/>
+  <title>Farenheit Test</title>
+  <author>
+    <name>Farenheit</name>
+  </author>
+  <entry>
+    <title>Test Book</title>
+    <id>urn:farenheit:test:1</id>
+    <updated>${now}</updated>
+    <author>
+      <name>Test Author</name>
+    </author>
+    <link rel="http://opds-spec.org/acquisition" href="/book/1/download" type="application/epub+zip"/>
+  </entry>
+</feed>`;
+  return xmlResponse(xml);
+}
