@@ -136,16 +136,27 @@ describe("server routes", () => {
     expect(await r.text()).toContain("Calibre");
   });
 
-  test("GET /opds returns an Atom acquisition feed with entries", async () => {
+  test("GET /opds returns the navigation feed pointing to /opds/books", async () => {
     const r = await fetch(`${baseUrl}/opds`);
     expect(r.status).toBe(200);
-    expect(r.headers.get("content-type")).toContain("atom+xml");
-    expect(r.headers.get("content-type")).toContain("opds-catalog");
+    const ct = r.headers.get("content-type") ?? "";
+    expect(ct).toContain("atom+xml");
+    expect(ct).toContain("kind=navigation");
     const body = await r.text();
     expect(body).toContain("<?xml");
-    expect(body).toContain("<feed");
     expect(body).toContain("<title>Farenheit</title>");
-    expect(body).toContain("urn:farenheit:catalog");
+    expect(body).toContain("All books");
+    expect(body).toContain("/opds/books");
+  });
+
+  test("GET /opds/books returns an acquisition feed with entries", async () => {
+    const r = await fetch(`${baseUrl}/opds/books`);
+    expect(r.status).toBe(200);
+    const ct = r.headers.get("content-type") ?? "";
+    expect(ct).toContain("atom+xml");
+    expect(ct).toContain("kind=acquisition");
+    const body = await r.text();
+    expect(body).toContain("urn:farenheit:catalog:books");
     expect(body).toContain("Valid Title");
     expect(body).toContain('rel="http://opds-spec.org/acquisition"');
     expect(body).toContain('type="application/epub+zip"');
@@ -153,8 +164,7 @@ describe("server routes", () => {
     expect(body).toContain("/download");
   });
 
-  test("GET /opds skips books that aren't on disk", async () => {
-    // Mark one book as not-on-disk and confirm it's absent from the feed.
+  test("GET /opds/books skips books that aren't on disk", async () => {
     const all = store.list({});
     const target = all[0]!;
     store.upsert({
@@ -169,7 +179,7 @@ describe("server routes", () => {
       mtime: target.mtime,
       onDisk: false,
     });
-    const r = await fetch(`${baseUrl}/opds`);
+    const r = await fetch(`${baseUrl}/opds/books`);
     const body = await r.text();
     expect(body).not.toContain(`urn:farenheit:book:${target.id}`);
   });

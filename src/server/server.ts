@@ -11,7 +11,7 @@ import { handleDownload } from "./routes/download";
 import { handleDownloadMobi } from "./routes/downloadMobi";
 import { handleSearch } from "./routes/search";
 import { handleSyncRetry, handleBookSyncRetry } from "./routes/sync";
-import { handleOpds } from "./routes/opds";
+import { handleOpdsRoot, handleOpdsBooks } from "./routes/opds";
 import { renderNotFound } from "./templates/notFound";
 import type { Ctx } from "./routes/context";
 
@@ -77,7 +77,8 @@ async function route(ctx: Ctx, req: Request, url: URL): Promise<Response> {
   if (p === "/") return handleHome(ctx, url);
   if (p === "/search") return handleSearch(ctx, url);
   if (p === "/sync/retry") return handleSyncRetry(ctx);
-  if (p === "/opds" || p === "/opds/") return handleOpds(ctx, url);
+  if (p === "/opds" || p === "/opds/") return handleOpdsRoot(ctx, url);
+  if (p === "/opds/books" || p === "/opds/books/") return handleOpdsBooks(ctx, url);
 
   let m: RegExpMatchArray | null;
 
