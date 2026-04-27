@@ -141,25 +141,26 @@ describe("server routes", () => {
     expect(r.status).toBe(200);
     const ct = r.headers.get("content-type") ?? "";
     expect(ct).toContain("atom+xml");
-    expect(ct).toContain("kind=navigation");
     const body = await r.text();
     expect(body).toContain("<?xml");
     expect(body).toContain("<title>Farenheit</title>");
     expect(body).toContain("All books");
     expect(body).toContain("/opds/books");
+    expect(body).toContain('rel="subsection"');
   });
 
-  test("GET /opds/books returns an acquisition feed with entries", async () => {
+  test("GET /opds/books returns an acquisition feed with xhtml content", async () => {
     const r = await fetch(`${baseUrl}/opds/books`);
     expect(r.status).toBe(200);
     const ct = r.headers.get("content-type") ?? "";
     expect(ct).toContain("atom+xml");
-    expect(ct).toContain("kind=acquisition");
     const body = await r.text();
     expect(body).toContain("urn:farenheit:catalog:books");
     expect(body).toContain("Valid Title");
     expect(body).toContain('rel="http://opds-spec.org/acquisition"');
     expect(body).toContain('type="application/epub+zip"');
+    expect(body).toContain('<content type="xhtml">');
+    expect(body).toContain('xmlns="http://www.w3.org/1999/xhtml"');
     expect(body).toContain("/book/");
     expect(body).toContain("/download");
   });
