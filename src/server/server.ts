@@ -39,12 +39,13 @@ export function startServer(deps: ServerDeps): Server {
   const server = Bun.serve({
     hostname: config.host,
     port: config.port,
-    async fetch(req: Request): Promise<Response> {
+    async fetch(req: Request, srv): Promise<Response> {
       const url = new URL(req.url);
 
       // Auth gate runs first — short-circuits before touching the store
       // or generating a device cookie when credentials are wrong.
-      const authCheck = checkAuth(config.auth, req);
+      const clientIP = srv.requestIP(req)?.address ?? null;
+      const authCheck = checkAuth(config.auth, req, clientIP);
       if (!authCheck.ok) return authCheck.response;
 
       const { deviceId, setCookieHeader } = resolveDevice(req, store);
