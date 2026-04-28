@@ -10,8 +10,11 @@ export async function processCover(
 ): Promise<void> {
   // Kobo's experimental browser runs a very old WebKit that doesn't
   // support WebP, so we serve JPEG. mozjpeg trims ~15% off the size.
+  // progressive: false — mozjpeg defaults to progressive scan, which the
+  // Kindle experimental browser fails to decode (renders as broken-image
+  // placeholder). Baseline JPEG works on every device we care about.
   await sharp(imageBuffer)
     .resize({ width: COVER_MAX_WIDTH, withoutEnlargement: true })
-    .jpeg({ quality: 82, mozjpeg: true })
+    .jpeg({ quality: 82, mozjpeg: true, progressive: false })
     .toFile(destPath);
 }
