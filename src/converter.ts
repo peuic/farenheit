@@ -32,8 +32,12 @@ type ConvertImpl = (bin: string, src: string, dest: string) => Promise<void>;
 
 async function defaultConvertImpl(bin: string, src: string, dest: string): Promise<void> {
   mkdirSync(dirname(dest), { recursive: true });
+  // --mobi-file-type=new forces the modern KF8/AZW3-equivalent container
+  // instead of the legacy PalmDOC MOBI 6 format. Kindles index covers
+  // reliably from KF8 sideloaded files; MOBI 6 sideloads frequently end
+  // up without a thumbnail in the device library.
   await new Promise<void>((resolve, reject) => {
-    const p = spawn(bin, [src, dest], { shell: false });
+    const p = spawn(bin, [src, dest, "--mobi-file-type=new"], { shell: false });
     p.stdout.on("data", () => {});
     p.stderr.on("data", () => {});
     p.on("close", (code) => {
