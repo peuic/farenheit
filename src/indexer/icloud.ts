@@ -1,16 +1,17 @@
 import { spawn } from "node:child_process";
 
-type RunResult = { stdout: string; code: number };
+export type RunResult = { stdout: string; stderr: string; code: number };
 type Runner = (command: string, args: string[]) => Promise<RunResult>;
 
 async function defaultRunner(command: string, args: string[]): Promise<RunResult> {
   return await new Promise((resolve) => {
     const p = spawn(command, args, { shell: false });
     let stdout = "";
+    let stderr = "";
     p.stdout.on("data", (b) => (stdout += b.toString()));
-    p.stderr.on("data", () => {});
-    p.on("close", (code) => resolve({ stdout, code: code ?? 0 }));
-    p.on("error", () => resolve({ stdout: "", code: 1 }));
+    p.stderr.on("data", (b) => (stderr += b.toString()));
+    p.on("close", (code) => resolve({ stdout, stderr, code: code ?? 0 }));
+    p.on("error", (e) => resolve({ stdout: "", stderr: e.message, code: 1 }));
   });
 }
 
@@ -25,6 +26,13 @@ export async function isDatalessPlaceholder(path: string): Promise<boolean> {
   return /isDataless\s*=\s*1/.test(r.stdout);
 }
 
+// Full status output for diagnostics. Unlike isDatalessPlaceholder, this
+// surfaces brctl's stderr and exit code so callers can distinguish "not
+// dataless" from "brctl couldn't tell us" (permission denied, path missing).
+export async function brctlStatus(path: string): Promise<RunResult> {
+  return await runner("brctl", ["status", path]);
+}
+
 export async function ensureMaterialized(path: string, timeoutMs = 60_000): Promise<void> {
   if (!(await isDatalessPlaceholder(path))) return;
   await runner("brctl", ["download", path]);
@@ -36,8 +44,11 @@ export async function ensureMaterialized(path: string, timeoutMs = 60_000): Prom
   throw new Error(`timeout waiting for iCloud download: ${path}`);
 }
 
-// Fire-and-forget download request. Does not wait for completion —
-// brctl hands the task off to fileproviderd and returns.
-export async function requestDownload(path: string): Promise<void> {
-  await runner("brctl", ["download", path]);
+// Fire-and-forget download request. Does not wait for completion — brctl
+// hands the task off to fileproviderd and returns. The result includes the
+// exit code and stderr so callers can log a real error instead of silently
+// looping on a broken file (e.g. iCloud upload never completed, permission
+// denied). Callers should inspect `result.code !== 0` and log stderr.
+export async function requestDownload(path: string): Promise<RunResult> {
+  return await runner("brctl", ["download", path]);
 }

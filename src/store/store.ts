@@ -24,6 +24,10 @@ const rowToBook = (r: any): Book => ({
   addedAt: r.added_at,
   indexedAt: r.indexed_at,
   onDisk: Boolean(r.on_disk),
+  syncRetryCount: r.sync_retry_count ?? 0,
+  syncLastError: r.sync_last_error ?? null,
+  syncLastAttemptedAt: r.sync_last_attempted_at ?? null,
+  syncFailed: Boolean(r.sync_failed),
 });
 
 const rowToBookWithDl = (r: any): BookWithDownload => ({
@@ -81,6 +85,59 @@ export class Store {
 
   deleteByRelPath(relPath: string): void {
     this.db.run(`DELETE FROM books WHERE rel_path = ?`, [relPath]);
+  }
+
+  // Record the outcome of a sync-retry attempt (brctl download). Bumps the
+  // retry counter and, after `failAfter` consecutive failures, flips the
+  // book to sync_failed=1 so it stops being included in bulk auto-retries.
+  // A successful attempt clears the failed flag and error message but keeps
+  // the counter for observability (see also resetSyncStatus).
+  recordSyncAttempt(
+    relPath: string,
+    outcome: { ok: boolean; error?: string | null },
+    failAfter = 5,
+  ): void {
+    const now = Date.now();
+    if (outcome.ok) {
+      this.db.run(
+        `UPDATE books
+           SET sync_last_attempted_at = ?,
+               sync_last_error = NULL,
+               sync_failed = 0
+         WHERE rel_path = ?`,
+        [now, relPath],
+      );
+      return;
+    }
+    // On failure, bump the counter atomically and evaluate the threshold in
+    // a single UPDATE so concurrent retries can't race past `failAfter`.
+    this.db.run(
+      `UPDATE books
+         SET sync_retry_count = sync_retry_count + 1,
+             sync_last_attempted_at = ?,
+             sync_last_error = ?,
+             sync_failed = CASE
+               WHEN sync_retry_count + 1 >= ? THEN 1
+               ELSE sync_failed
+             END
+       WHERE rel_path = ?`,
+      [now, outcome.error ?? null, failAfter, relPath],
+    );
+  }
+
+  // Clear sync failure state — used when the user explicitly asks for a
+  // manual retry on a single book (they know something changed on their
+  // end and want the auto-retry loop to give it another shot).
+  resetSyncStatus(bookId: number): void {
+    this.db.run(
+      `UPDATE books
+         SET sync_retry_count = 0,
+             sync_last_error = NULL,
+             sync_last_attempted_at = NULL,
+             sync_failed = 0
+       WHERE id = ?`,
+      [bookId],
+    );
   }
 
   getByRelPath(relPath: string): Book | null {
@@ -177,6 +234,10 @@ export class Store {
   }
 
   markDownloaded(deviceId: string, bookId: number): void {
+    // Lazy materialization: a download on a fresh request (before the cookie
+    // round-trips) needs the device row to exist so the FK holds. ensureDevice
+    // is idempotent — safe to call even when the row already exists.
+    this.ensureDevice(deviceId);
     const now = Date.now();
     this.db.run(
       `

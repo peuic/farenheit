@@ -30,6 +30,15 @@ export function renderSearchPage(
     return layout("Search — Farenheit", topbar + form + `</div>`);
   }
 
+  // Listing URL preserved as ?back= on each card so the detail page returns
+  // to this exact search query + page.
+  const backUrl = (() => {
+    const params = new URLSearchParams();
+    params.set("q", query);
+    if (page > 1) params.set("page", String(page));
+    return `/search?${params.toString()}`;
+  })();
+
   const resultsBlock = totalResults === 0
     ? `<div class="empty">No books matching “${escapeHtml(query)}”.</div>`
     : `<div class="count" style="margin-bottom:8px">
@@ -37,7 +46,7 @@ export function renderSearchPage(
        </div>
        ${renderPager(query, page, totalPages)}
        <ul class="book-list">
-         ${pageResults.map(renderResultItem).join("")}
+         ${pageResults.map((b) => renderResultItem(b, backUrl)).join("")}
        </ul>`;
 
   return layout(`Search: ${query}`, topbar + form + resultsBlock + `</div>`);
@@ -68,7 +77,7 @@ function renderPager(query: string, page: number, totalPages: number): string {
 </tr></table>`;
 }
 
-function renderResultItem(b: BookWithDownload): string {
+function renderResultItem(b: BookWithDownload, backUrl: string): string {
   const coverHtml = b.coverFilename
     ? `<img class="cover" src="/book/${b.id}/cover?v=${b.mtime}" alt="" width="50" height="75">`
     : `<div class="cover placeholder">no<br>cover</div>`;
@@ -79,9 +88,10 @@ function renderResultItem(b: BookWithDownload): string {
     b.downloadedAt ? "downloaded" : "",
     !b.onDisk ? "unsynced" : "",
   ].filter(Boolean).join(" ");
+  const detailHref = `/book/${b.id}?back=${encodeURIComponent(backUrl)}`;
   return `
 <li class="${classes}">
-  <a href="/book/${b.id}">
+  <a href="${detailHref}">
     <span class="marker"></span>
     ${coverHtml}
     <div class="meta">

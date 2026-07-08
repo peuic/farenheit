@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   findEbookConvert,
-  convertEpubToMobi,
+  convertEpubToAzw3,
   __setConvertImplForTests,
 } from "../../src/converter";
 
@@ -24,7 +24,7 @@ describe("findEbookConvert", () => {
   });
 });
 
-describe("convertEpubToMobi", () => {
+describe("convertEpubToAzw3", () => {
   let tmp: string;
 
   beforeEach(() => {
@@ -41,7 +41,7 @@ describe("convertEpubToMobi", () => {
 
   test("skips conversion when destination already exists", async () => {
     const src = join(tmp, "in.epub");
-    const dst = join(tmp, "out.mobi");
+    const dst = join(tmp, "out.azw3");
     writeFileSync(src, "fake");
     writeFileSync(dst, "already here");
 
@@ -50,26 +50,26 @@ describe("convertEpubToMobi", () => {
       called = true;
     });
 
-    await convertEpubToMobi("/bin/true", src, dst);
+    await convertEpubToAzw3("/bin/true", src, dst);
     expect(called).toBe(false);
   });
 
   test("invokes the impl and produces the destination file", async () => {
     const src = join(tmp, "in.epub");
-    const dst = join(tmp, "out.mobi");
+    const dst = join(tmp, "out.azw3");
     writeFileSync(src, "fake epub bytes");
 
     __setConvertImplForTests(async (_bin, _src, dest) => {
       writeFileSync(dest, "fake mobi bytes");
     });
 
-    await convertEpubToMobi("/usr/bin/ebook-convert", src, dst);
+    await convertEpubToAzw3("/usr/bin/ebook-convert", src, dst);
     expect(existsSync(dst)).toBe(true);
   });
 
   test("dedupes concurrent conversions to the same destination", async () => {
     const src = join(tmp, "in.epub");
-    const dst = join(tmp, "out.mobi");
+    const dst = join(tmp, "out.azw3");
     writeFileSync(src, "fake");
 
     let calls = 0;
@@ -80,9 +80,9 @@ describe("convertEpubToMobi", () => {
     });
 
     await Promise.all([
-      convertEpubToMobi("/bin/x", src, dst),
-      convertEpubToMobi("/bin/x", src, dst),
-      convertEpubToMobi("/bin/x", src, dst),
+      convertEpubToAzw3("/bin/x", src, dst),
+      convertEpubToAzw3("/bin/x", src, dst),
+      convertEpubToAzw3("/bin/x", src, dst),
     ]);
     expect(calls).toBe(1);
   });

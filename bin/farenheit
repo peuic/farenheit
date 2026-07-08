@@ -182,6 +182,38 @@ cmd_logs() {
   fi
 }
 
+cmd_stats() {
+  ensure_bun
+  local bun; bun="$(bun_path)"
+  ( cd "$PROJECT_DIR" && DATA_DIR="$PROJECT_DIR/data" "$bun" run src/cli/stats.ts "$@" )
+}
+
+cmd_prune() {
+  ensure_bun
+  local bun; bun="$(bun_path)"
+  ( cd "$PROJECT_DIR" && DATA_DIR="$PROJECT_DIR/data" "$bun" run src/cli/prune.ts "$@" )
+}
+
+cmd_doctor() {
+  ensure_bun
+  local bun books_dir
+  bun="$(bun_path)"
+  # Pull BOOKS_DIR from the installed launchd plist so `doctor` diagnoses the
+  # same library the running service sees. Fall back to $BOOKS_DIR from the
+  # caller's env when the service isn't installed (dev use).
+  if plist_exists; then
+    books_dir="$(/usr/libexec/PlistBuddy -c 'Print :EnvironmentVariables:BOOKS_DIR' "$PLIST_DST" 2>/dev/null || true)"
+  fi
+  books_dir="${books_dir:-${BOOKS_DIR:-}}"
+  if [[ -z "$books_dir" ]]; then
+    err "BOOKS_DIR not set — install the service or export BOOKS_DIR"
+  fi
+  ( cd "$PROJECT_DIR" \
+      && DATA_DIR="$PROJECT_DIR/data" \
+         BOOKS_DIR="$books_dir" \
+         "$bun" run src/cli/doctor.ts "$@" )
+}
+
 cmd_open() {
   local url
   url="$(service_url)"
@@ -207,6 +239,14 @@ commands:
   restart        restart the service
   status         show running state, URL, log tail
   logs [-f]      print last 50 log lines (or follow with -f)
+  stats          show library, download, and device analytics
+                 use 'stats --device <prefix>' for per-device drilldown
+  prune          delete ghost device rows (0 downloads, never came back)
+                 use 'prune --dry-run' to preview
+  doctor <id>    diagnose a book stuck in sync-retry — runs brctl status
+                 and brctl download and shows real stdout/stderr/code.
+                 also: 'doctor --unsynced' | 'doctor --failed' |
+                 'doctor --file <relPath>'
   open           open the UI in the Mac browser
   url            print the LAN URL (handy to copy to the Kobo)
   help           this text
@@ -223,6 +263,9 @@ case "${1:-help}" in
   restart)    shift; cmd_restart "$@" ;;
   status)     shift; cmd_status "$@" ;;
   logs)       shift; cmd_logs "$@" ;;
+  stats)      shift; cmd_stats "$@" ;;
+  prune)      shift; cmd_prune "$@" ;;
+  doctor)     shift; cmd_doctor "$@" ;;
   open)       shift; cmd_open "$@" ;;
   url)        shift; cmd_url "$@" ;;
   help|-h|--help) cmd_help ;;

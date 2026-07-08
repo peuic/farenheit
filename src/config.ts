@@ -7,9 +7,10 @@ export type Config = {
   dataDir: string;
   dbPath: string;
   coversDir: string;
-  mobiCacheDir: string;
+  azw3CacheDir: string;
   logPath: string;
   port: number;
+  adminPort: number;
   host: string;
   ebookConvertPath: string | null;
   auth: { user: string; pass: string } | null;
@@ -28,13 +29,21 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   mkdirSync(dataDir, { recursive: true });
   const coversDir = join(dataDir, "covers");
   mkdirSync(coversDir, { recursive: true });
-  const mobiCacheDir = join(dataDir, "mobi-cache");
-  mkdirSync(mobiCacheDir, { recursive: true });
+  const azw3CacheDir = join(dataDir, "azw3-cache");
+  mkdirSync(azw3CacheDir, { recursive: true });
 
   const portStr = env.PORT ?? "1111";
   const port = Number.parseInt(portStr, 10);
   if (Number.isNaN(port) || port < 0 || port > 65535) {
     throw new Error(`invalid PORT: ${portStr}`);
+  }
+
+  // Admin dashboard port — intentionally NOT exposed via Tailscale Funnel
+  // (which only proxies the main port). Reachable on LAN/loopback only.
+  const adminPortStr = env.ADMIN_PORT ?? "1112";
+  const adminPort = Number.parseInt(adminPortStr, 10);
+  if (Number.isNaN(adminPort) || adminPort < 0 || adminPort > 65535) {
+    throw new Error(`invalid ADMIN_PORT: ${adminPortStr}`);
   }
 
   const ebookConvertPath = findEbookConvert(env.EBOOK_CONVERT);
@@ -52,9 +61,10 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     dataDir,
     dbPath: join(dataDir, "farenheit.sqlite"),
     coversDir,
-    mobiCacheDir,
+    azw3CacheDir,
     logPath: join(dataDir, "farenheit.log"),
     port,
+    adminPort,
     host: env.HOST ?? "0.0.0.0",
     ebookConvertPath,
     auth,

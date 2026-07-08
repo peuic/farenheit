@@ -26,6 +26,9 @@ fi
 OUT="$HOME/Library/LaunchAgents/com.farenheit.plist"
 mkdir -p "$(dirname "$OUT")"
 
+# Write the plist with restrictive perms BEFORE filling in the password,
+# so the plaintext FARENHEIT_PASS is never world-readable for any window.
+umask 077
 sed \
   -e "s|__PROJECT_DIR__|$PROJECT_DIR|g" \
   -e "s|__BUN_PATH__|$BUN_PATH|g" \
@@ -33,6 +36,7 @@ sed \
   -e "s|__FARENHEIT_USER__|$FARENHEIT_USER_VAL|g" \
   -e "s|__FARENHEIT_PASS__|$FARENHEIT_PASS_VAL|g" \
   "$PROJECT_DIR/launchd/com.farenheit.plist.template" > "$OUT"
+chmod 600 "$OUT"
 
 if [[ -n "$FARENHEIT_USER_VAL" && -n "$FARENHEIT_PASS_VAL" ]]; then
   echo "Basic Auth enabled (user: $FARENHEIT_USER_VAL)"

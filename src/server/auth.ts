@@ -10,9 +10,9 @@ export type AuthConfig = { user: string; pass: string } | null;
  *   - Auth configured + request originates from the local LAN (RFC 1918
  *     private range) → pass. Convenience for clients on the same Wi-Fi.
  *   - Auth configured + anything else → must authenticate via one of:
- *       1. fh_auth cookie (set by a previous successful token visit)
- *       2. ?token=<password> query param (sets the cookie for next time)
- *       3. HTTP Basic Auth (Xteink/KOReader/curl)
+ *       1. fh_auth cookie (set by a successful POST /login)
+ *       2. HTTP Basic Auth (Xteink/KOReader/curl — for OPDS clients that
+ *          can't follow a redirect to /login)
  *
  * Tunnel daemons (cloudflared, tailscaled funnel, …) all relay incoming
  * traffic to the local service via 127.0.0.1, so loopback is treated as
@@ -33,22 +33,14 @@ export function checkAuth(
   if (!auth) return { ok: true };
   if (clientIP && isPrivateLanIP(clientIP)) return { ok: true };
 
-  // 1. Cookie set by a previous token visit (sticky session)
+  // 1. Cookie set by a previous successful POST /login (sticky session).
   const cookieToken = parseAuthCookie(req.headers.get("cookie"));
   if (cookieToken && constantTimeEquals(cookieToken, auth.pass)) {
     return { ok: true };
   }
 
-  // 2. ?token=<password> in URL — for bookmark-friendly first-visit auth.
-  //    Validates against pass and sets the auth cookie for subsequent
-  //    requests in the same session.
-  const url = new URL(req.url);
-  const urlToken = url.searchParams.get("token");
-  if (urlToken && constantTimeEquals(urlToken, auth.pass)) {
-    return { ok: true, setAuthCookie: auth.pass };
-  }
-
-  // 3. Basic Auth — for command-line tools and dedicated OPDS readers.
+  // 2. Basic Auth — for command-line tools and dedicated OPDS readers
+  //    that can't follow the /login redirect flow.
   const creds = parseBasicAuth(req.headers.get("authorization"));
   if (creds) {
     const userOk = constantTimeEquals(creds.user, auth.user);

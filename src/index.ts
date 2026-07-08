@@ -3,6 +3,7 @@ import { loadConfig } from "./config";
 import { Store } from "./store/store";
 import { Indexer } from "./indexer/indexer";
 import { startServer } from "./server/server";
+import { startAdminServer } from "./server/admin";
 
 for (const level of ["log", "info", "warn", "error"] as const) {
   const orig = console[level].bind(console);
@@ -27,8 +28,8 @@ async function main() {
   console.log(`[farenheit] DATA_DIR=${config.dataDir}`);
   console.log(
     config.ebookConvertPath
-      ? `[farenheit] MOBI export: on (${config.ebookConvertPath})`
-      : `[farenheit] MOBI export: off (install Calibre to enable)`,
+      ? `[farenheit] AZW3 export: on (${config.ebookConvertPath})`
+      : `[farenheit] AZW3 export: off (install Calibre to enable)`,
   );
 
   const store = new Store(config.dbPath);
@@ -56,9 +57,17 @@ async function main() {
     console.log(`[farenheit]   → http://${ip}:${server.port}`);
   }
 
+  // Admin dashboard on a separate port, NOT exposed via Tailscale Funnel.
+  const adminServer = startAdminServer({ config });
+  console.log(`[farenheit] admin listening on ${adminServer.hostname}:${adminServer.port}`);
+  for (const ip of ips) {
+    console.log(`[farenheit]   → http://${ip}:${adminServer.port}/admin`);
+  }
+
   const shutdown = async (sig: string) => {
     console.log(`[farenheit] ${sig} received, shutting down…`);
     server.stop(true);
+    adminServer.stop(true);
     await indexer.stop();
     store.close();
     process.exit(0);

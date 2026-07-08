@@ -64,7 +64,6 @@ export function handleOpdsRecent(ctx: Ctx, _url: URL): Response {
     selfHref: "/opds/recent",
     title: "Farenheit — Recent",
     feedId: "urn:uuid:00000000-0000-4000-8000-farenheit0001",
-    mobiAvailable: ctx.config.ebookConvertPath !== null,
   });
   return xmlResponse(xml);
 }
@@ -93,7 +92,6 @@ export function handleOpdsAlphabetical(ctx: Ctx, url: URL): Response {
     selfHref: "/opds/alphabetical" + (offset > 0 ? `?offset=${offset}` : ""),
     title: "Farenheit — Alphabetical",
     feedId: `urn:uuid:00000000-0000-4000-8000-farenheit0002${offset > 0 ? `:${offset}` : ""}`,
-    mobiAvailable: ctx.config.ebookConvertPath !== null,
     pagination: {
       basePath: "/opds/alphabetical",
       hasNext,
@@ -167,7 +165,6 @@ export function handleOpdsAuthor(ctx: Ctx, encodedName: string): Response {
     selfHref: `/opds/author/${encodeURIComponent(author)}`,
     title: `Farenheit — ${author}`,
     feedId: `urn:farenheit:author:${encodeURIComponent(author)}`,
-    mobiAvailable: ctx.config.ebookConvertPath !== null,
   });
   return xmlResponse(xml);
 }
@@ -215,7 +212,6 @@ export function handleOpdsSearch(ctx: Ctx, url: URL): Response {
     selfHref: `/opds/search?q=${encodeURIComponent(q)}`,
     title: `Farenheit — Search: ${q}`,
     feedId: "urn:uuid:00000000-0000-4000-8000-farenheit0004",
-    mobiAvailable: ctx.config.ebookConvertPath !== null,
   });
   return xmlResponse(xml);
 }
@@ -250,7 +246,6 @@ type AcquisitionOpts = {
   selfHref: string;
   title: string;
   feedId: string;
-  mobiAvailable: boolean;
   pagination?: {
     basePath: string;
     hasNext: boolean;
@@ -273,7 +268,7 @@ function renderAcquisition(books: BookWithDownload[], opts: AcquisitionOpts): st
   }
   const pagination = pagLinks.length ? "\n" + pagLinks.join("\n") : "";
 
-  const entries = books.map((b) => renderEntry(b, opts.mobiAvailable)).join("\n");
+  const entries = books.map((b) => renderEntry(b)).join("\n");
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
@@ -291,7 +286,7 @@ ${entries}
 </feed>`;
 }
 
-function renderEntry(b: BookWithDownload, mobiAvailable: boolean): string {
+function renderEntry(b: BookWithDownload): string {
   const id = `urn:farenheit:book:${b.id}`;
   const updated = new Date(b.indexedAt || b.addedAt)
     .toISOString()
@@ -324,9 +319,12 @@ function renderEntry(b: BookWithDownload, mobiAvailable: boolean): string {
   }
 
   lines.push(`    <link rel="http://opds-spec.org/acquisition" href="/book/${b.id}/download.epub" length="${b.sizeBytes}" title="EPUB" mtime="${updated}" type="application/epub+zip"/>`);
-  if (mobiAvailable) {
-    lines.push(`    <link rel="http://opds-spec.org/acquisition" href="/book/${b.id}/download.mobi" title="MOBI" mtime="${updated}" type="application/x-mobipocket-ebook"/>`);
-  }
+  // AZW3 is intentionally NOT advertised in OPDS feeds. Strict parsers
+  // (Onyx/Xteink) reject the entire feed when they encounter an
+  // unrecognized acquisition MIME type, and `application/vnd.amazon.ebook`
+  // isn't on their allowlist. Kindle users don't speak OPDS anyway — they
+  // use the web UI where the .azw3 button is right there on each book's
+  // detail page.
 
   lines.push(`  </entry>`);
   return lines.join("\n");

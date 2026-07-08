@@ -15,6 +15,10 @@ export type Book = BookInput & {
   id: number;
   addedAt: number;
   indexedAt: number;
+  syncRetryCount: number;
+  syncLastError: string | null;
+  syncLastAttemptedAt: number | null;
+  syncFailed: boolean;
 };
 
 export type BookWithDownload = Book & {

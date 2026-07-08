@@ -8,7 +8,7 @@ import { handleCategory } from "./routes/category";
 import { handleBook } from "./routes/book";
 import { handleCover } from "./routes/cover";
 import { handleDownload } from "./routes/download";
-import { handleDownloadMobi } from "./routes/downloadMobi";
+import { handleDownloadAzw3 } from "./routes/downloadAzw3";
 import { handleSearch } from "./routes/search";
 import { handleSyncRetry, handleBookSyncRetry } from "./routes/sync";
 import { checkAuth, buildAuthCookieHeader } from "./auth";
@@ -40,13 +40,35 @@ export function startServer(deps: ServerDeps): Server {
   const server = Bun.serve({
     hostname: config.host,
     port: config.port,
+    // Bun's default idleTimeout is 10s, which is too aggressive for slow
+    // e-reader clients (Xteink/Onyx) downloading large feeds or book files
+    // through the Tailscale Funnel ingress. 120s gives even a 5MB book on
+    // a sluggish Wi-Fi enough headroom; honest content takes <1s, so this
+    // doesn't increase exposure to slowloris in any meaningful way.
+    idleTimeout: 120,
     async fetch(req: Request, srv): Promise<Response> {
       const url = new URL(req.url);
       const p = url.pathname;
 
+      // /robots.txt must bypass auth — crawlers (well-behaved or not) need
+      // to read it without credentials. We Disallow everything anyway, so
+      // there's nothing to leak.
+      if (p === "/robots.txt") {
+        return new Response("User-agent: *\nDisallow: /\n", {
+          status: 200,
+          headers: {
+            "Content-Type": "text/plain; charset=utf-8",
+            "Cache-Control": "public, max-age=3600",
+          },
+        });
+      }
+
       // /login is always reachable (otherwise nobody could authenticate).
       if (p === "/login") {
-        if (req.method === "POST") return handleLoginPost(config.auth, req);
+        if (req.method === "POST") {
+          const loginIP = srv.requestIP(req)?.address ?? null;
+          return handleLoginPost(config.auth, req, loginIP);
+        }
         if (req.method === "GET" || req.method === "HEAD") {
           return handleLoginGet(config.auth);
         }
@@ -120,8 +142,12 @@ function resolveDevice(req: Request, store: Store): { deviceId: string; setCooki
     store.ensureDevice(cookieId);
     return { deviceId: cookieId, setCookieHeader: null };
   }
+  // Lazy device materialization: don't insert a row for clients that haven't
+  // proven they store cookies. Bots, OPDS readers without cookie support, and
+  // HEAD probes would otherwise create one device row per request and never
+  // come back. If a real action happens on this request (e.g. a download),
+  // markDownloaded calls ensureDevice itself so the FK is satisfied.
   const fresh = randomUUID();
-  store.ensureDevice(fresh);
   return { deviceId: fresh, setCookieHeader: buildSetCookieHeader(fresh) };
 }
 
@@ -152,13 +178,13 @@ async function route(ctx: Ctx, req: Request, url: URL): Promise<Response> {
   if (m) return handleCategory(ctx, decodeURIComponent(m[1]!), url);
 
   m = p.match(/^\/book\/(\d+)\/?$/);
-  if (m) return handleBook(ctx, m[1]!);
+  if (m) return handleBook(ctx, m[1]!, url);
 
   m = p.match(/^\/book\/(\d+)\/cover\/?$/);
   if (m) return handleCover(ctx, m[1]!);
 
-  m = p.match(/^\/book\/(\d+)\/download\.mobi\/?$/);
-  if (m) return handleDownloadMobi(ctx, m[1]!);
+  m = p.match(/^\/book\/(\d+)\/download\.azw3\/?$/);
+  if (m) return handleDownloadAzw3(ctx, m[1]!);
 
   m = p.match(/^\/book\/(\d+)\/download(?:\.epub)?\/?$/);
   if (m) return handleDownload(ctx, m[1]!);

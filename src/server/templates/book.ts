@@ -4,7 +4,7 @@ import type { BookWithDownload } from "../../store/types";
 export function renderBook(
   b: BookWithDownload,
   backHref: string,
-  mobiAvailable: boolean,
+  azw3Available: boolean,
 ): string {
   const coverHtml = b.coverFilename
     ? `<img class="cover-big" src="/book/${b.id}/cover?v=${b.mtime}" alt="">`
@@ -23,8 +23,14 @@ export function renderBook(
     ? `<div class="description">${escapeHtml(descriptionText)}</div>`
     : "";
 
+  // When brctl has failed too many times in a row the auto-retry loop
+  // drops this book (see routes/sync.ts). Surface *why* to the reader so
+  // they can act — usually the source iCloud upload never completed and
+  // the file needs to be re-added from the desktop.
   const unsyncedWarn = !b.onDisk
-    ? `<div class="warn">This book hasn't downloaded from iCloud yet. You can force a retry.</div>`
+    ? b.syncFailed
+      ? `<div class="warn">Sync failed after ${b.syncRetryCount} attempts. Last error: ${escapeHtml(b.syncLastError ?? "unknown")}. Manual retry will reset the counter.</div>`
+      : `<div class="warn">This book hasn't downloaded from iCloud yet. You can force a retry.</div>`
     : "";
 
   let downloadHtml: string;
@@ -36,11 +42,11 @@ export function renderBook(
     downloadHtml = `<a class="download-btn" href="/book/${b.id}/download"><span class="mark">❖</span>Download .epub</a>`;
   }
 
-  // MOBI conversion is only offered when Calibre's ebook-convert is available
+  // AZW3 conversion is only offered when Calibre's ebook-convert is available
   // on the host (see config.ebookConvertPath). Placed below EPUB as a
   // secondary action for Kindle users.
-  const mobiHtml = mobiAvailable && b.onDisk
-    ? `<a class="download-btn secondary" href="/book/${b.id}/download.mobi"><span class="mark">❖</span>Download .mobi (Kindle)</a>`
+  const azw3Html = azw3Available && b.onDisk
+    ? `<a class="download-btn secondary" href="/book/${b.id}/download.azw3"><span class="mark">❖</span>Download .azw3 (Kindle)</a>`
     : "";
 
   const topbar = `
@@ -60,7 +66,7 @@ export function renderBook(
     ${unsyncedWarn}
     ${descriptionHtml}
     ${downloadHtml}
-    ${mobiHtml}
+    ${azw3Html}
   </article>
 </div>`;
   return layout(b.title, body);

@@ -12,7 +12,7 @@ const KNOWN_EBOOK_CONVERT_PATHS = [
 /**
  * Resolve the `ebook-convert` binary. An explicit env override takes priority;
  * otherwise the standard macOS install paths are tried. Returns `null` when
- * no binary is available — the server treats that as "no MOBI export".
+ * no binary is available — the server treats that as "no AZW3 export".
  */
 export function findEbookConvert(envOverride?: string | undefined): string | null {
   if (envOverride && existsSync(envOverride)) return envOverride;
@@ -24,7 +24,7 @@ export function findEbookConvert(envOverride?: string | undefined): string | nul
 
 // ——— Conversion ———
 // Deduplicate concurrent conversions of the same destination so that two
-// clients asking for the same MOBI don't kick off two `ebook-convert`
+// clients asking for the same AZW3 don't kick off two `ebook-convert`
 // processes in parallel.
 const inflight = new Map<string, Promise<void>>();
 
@@ -32,12 +32,14 @@ type ConvertImpl = (bin: string, src: string, dest: string) => Promise<void>;
 
 async function defaultConvertImpl(bin: string, src: string, dest: string): Promise<void> {
   mkdirSync(dirname(dest), { recursive: true });
-  // --mobi-file-type=new forces the modern KF8/AZW3-equivalent container
-  // instead of the legacy PalmDOC MOBI 6 format. Kindles index covers
-  // reliably from KF8 sideloaded files; MOBI 6 sideloads frequently end
-  // up without a thumbnail in the device library.
+  // Output extension `.azw3` makes Calibre emit a KF8 container with the
+  // native Amazon AZW3 wrapper. Kindle's library indexer treats sideloaded
+  // .azw3 files the same way it treats Amazon-store downloads (covers show
+  // up reliably, books open without "is this a purchased item?" warnings).
+  // The legacy `.mobi` output we used before sometimes triggered Kindle's
+  // DRM check on the same KF8 bytes.
   await new Promise<void>((resolve, reject) => {
-    const p = spawn(bin, [src, dest, "--mobi-file-type=new"], { shell: false });
+    const p = spawn(bin, [src, dest], { shell: false });
     p.stdout.on("data", () => {});
     p.stderr.on("data", () => {});
     p.on("close", (code) => {
@@ -53,20 +55,20 @@ export function __setConvertImplForTests(fn: ConvertImpl): void {
   convertImpl = fn;
 }
 
-export async function convertEpubToMobi(
+export async function convertEpubToAzw3(
   ebookConvertPath: string,
   srcEpub: string,
-  destMobi: string,
+  destAzw3: string,
 ): Promise<void> {
-  if (existsSync(destMobi)) return;
-  const existing = inflight.get(destMobi);
+  if (existsSync(destAzw3)) return;
+  const existing = inflight.get(destAzw3);
   if (existing) return existing;
 
-  const promise = convertImpl(ebookConvertPath, srcEpub, destMobi);
-  inflight.set(destMobi, promise);
+  const promise = convertImpl(ebookConvertPath, srcEpub, destAzw3);
+  inflight.set(destAzw3, promise);
   try {
     await promise;
   } finally {
-    inflight.delete(destMobi);
+    inflight.delete(destAzw3);
   }
 }

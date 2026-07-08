@@ -24,7 +24,7 @@ const SEARCH_ICON = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"
 export function renderHome(o: Opts): string {
   const left = o.backHref
     ? `<a class="back" href="${escapeHtml(o.backHref)}"><span class="back-arrow">←</span>all</a>`
-    : `<span class="brand"><span class="brand-mark">§</span>Farenheit</span>`;
+    : `<a class="brand" href="/"><span class="brand-mark">§</span>Farenheit</a>`;
 
   const headingText = o.backHref && o.heading
     ? escapeHtml(o.heading)
@@ -53,13 +53,39 @@ export function renderHome(o: Opts): string {
     ? renderAlphanav(o.letterIndex, o.sortBasePath, o.sort)
     : "";
 
+  // The URL of the current listing — passed to each book card so the detail
+  // page's back button returns to this exact page+sort, not /.
+  const backUrl = pageUrl(o.sortBasePath, o.sort, o.page);
+
   const booksHtml = o.books.length === 0
     ? `<div class="empty">No books here yet.</div>`
-    : `<ul class="book-list">${o.books.map(renderBookItem).join("")}</ul>`;
+    : `<ul class="book-list">${o.books.map((b, i) => renderBookItem(b, i, backUrl)).join("")}</ul>`;
 
   const pagerHtml = renderPager(o.page, o.totalPages, o.sortBasePath, o.sort);
 
-  const body = `${topbarMain}${topbarMeta}${alphanavHtml}${pagerHtml}${booksHtml}`;
+  // Editorial end-mark: signals "this is the entire page, no scrolling needed".
+  // Echoes the § brand mark from the topbar — opens with §, closes with §.
+  const endMarkHtml = o.books.length > 0
+    ? `<div class="page-end" aria-hidden="true">§</div>`
+    : "";
+
+  // Edge tap zones — narrow invisible-ish bands on the left/right viewport
+  // edges that navigate prev/next. Plain <a> (no JS), 28px wide so they
+  // don't steal area from intentional card taps. Only rendered when there's
+  // an actual destination — page 1 has no prev zone, last page has no next.
+  const prevHref = o.page > 1 ? pageUrl(o.sortBasePath, o.sort, o.page - 1) : null;
+  const nextHref = o.page < o.totalPages ? pageUrl(o.sortBasePath, o.sort, o.page + 1) : null;
+  const edgeZonesHtml = [
+    prevHref ? `<a class="edge-zone edge-prev" href="${prevHref}" aria-label="Previous page"><span class="edge-mark">‹</span></a>` : "",
+    nextHref ? `<a class="edge-zone edge-next" href="${nextHref}" aria-label="Next page"><span class="edge-mark">›</span></a>` : "",
+  ].join("");
+
+  // Wrap the list so edge zones only cover the cards, not the topbar/alphanav.
+  const listWrap = o.books.length > 0
+    ? `<div class="list-wrap">${booksHtml}${edgeZonesHtml}</div>`
+    : booksHtml;
+
+  const body = `${topbarMain}${topbarMeta}${alphanavHtml}${pagerHtml}${listWrap}${endMarkHtml}`;
   return layout(o.pageTitle, body);
 }
 
@@ -103,21 +129,23 @@ function renderPager(
 </tr></table>`;
 }
 
-function renderBookItem(b: BookWithDownload): string {
+function renderBookItem(b: BookWithDownload, index: number, backUrl: string): string {
   const coverHtml = b.coverFilename
-    ? `<img class="cover" src="/book/${b.id}/cover?v=${b.mtime}" alt="" width="50" height="75">`
+    ? `<img class="cover" src="/book/${b.id}/cover?v=${b.mtime}" alt="" width="88" height="132">`
     : `<div class="cover placeholder">no<br>cover</div>`;
   const authorHtml = b.author
     ? `<div class="author">${escapeHtml(b.author)}</div>`
     : "";
   const classes = [
+    index % 2 === 0 ? "col-l" : "col-r",
     b.downloadedAt ? "downloaded" : "",
     !b.onDisk ? "unsynced" : "",
   ].filter(Boolean).join(" ");
 
+  const detailHref = `/book/${b.id}?back=${encodeURIComponent(backUrl)}`;
   return `
 <li class="${classes}">
-  <a href="/book/${b.id}">
+  <a href="${detailHref}">
     <span class="marker"></span>
     ${coverHtml}
     <div class="meta">

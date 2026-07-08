@@ -60,14 +60,14 @@ table.topbar-main td.col-right { text-align: right;  width: 30%; }
 .back {
   display: inline-block;
   color: #f5efe0;
-  font-size: 15px;
+  font-size: 16px;
   font-style: italic;
   border: 0;
-  padding: 8px 14px;
+  padding: 11px 18px;
   text-decoration: none;
   background: #1a1714;
 }
-.back-arrow { font-style: normal; margin-right: 4px; color: #f5efe0; }
+.back-arrow { font-style: normal; margin-right: 6px; color: #f5efe0; }
 
 .heading {
   font-size: 14px;
@@ -145,81 +145,131 @@ table.alphanav td {
 table.alphanav td a { color: #1a1714; display: block; padding: 9px 0; }
 table.alphanav td .empty { color: #c9bfa8; display: block; padding: 9px 0; }
 
-/* ═════════════ BOOK LIST (fixed-height rows, float cover) ═════════════ */
+/* ═════════════ BOOK LIST (2-col card grid via float) ═════════════ */
 ul.book-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: block;
+  overflow: hidden; /* contains the floated cards */
 }
 ul.book-list li {
   display: block;
-  height: 110px;
+  float: left;
+  width: 50%;
+  height: 184px;
   border-bottom: 1px solid #c9bfa8;
   position: relative;
   overflow: hidden;
 }
+/* hairline divider between the two columns */
+ul.book-list li.col-l { border-right: 1px solid #c9bfa8; }
 ul.book-list li a {
   display: block;
-  height: 110px;
-  padding: 12px 14px 12px 34px;
+  height: 184px;
+  padding: 6px 10px;
   color: #1a1714;
   text-decoration: none;
+  text-align: center;
 }
 .marker {
   position: absolute;
-  left: 8px;
-  top: 46px;
-  width: 18px;
+  top: 6px;
+  right: 8px;
   font-family: "Courier New", Courier, monospace;
   font-size: 14px;
   color: #958873;
-  text-align: center;
+  z-index: 1;
 }
 li.downloaded .marker::before { content: "✓"; color: #b84318; }
 li.unsynced   .marker::before { content: "⊙"; color: #958873; }
 img.cover, div.cover {
-  float: left;
-  width: 58px;
-  height: 87px;
-  margin-right: 14px;
+  display: block;
+  width: 88px;
+  height: 132px;
+  margin: 0 auto 4px;
   border: 1px solid #c9bfa8;
   background: #ece3cd;
-  display: block;
 }
 div.cover.placeholder {
   text-align: center;
-  padding: 32px 2px 0;
-  font-size: 10px;
+  padding: 50px 4px 0;
+  font-size: 12px;
   color: #6b5f4f;
   font-style: italic;
   line-height: 1.1;
 }
 .meta {
   display: block;
-  overflow: hidden; /* contains the floated cover's side */
-  padding-top: 6px;
+  text-align: center;
 }
 .meta .title {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: bold;
   line-height: 1.25;
   color: #1a1714;
-  white-space: nowrap;
+  max-height: 2.5em; /* clamp to ~2 lines */
   overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: 5px;
+  margin-bottom: 2px;
 }
 .meta .author {
-  font-size: 17px;
+  font-size: 14px;
   font-style: italic;
   color: #3e362d;
+  line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 li.downloaded .meta .title { color: #6b5f4f; font-weight: normal; }
 li.unsynced   .meta .title { color: #6b5f4f; font-style: italic; font-weight: normal; }
+
+/* Editorial end-mark — closes the page like a section sign at the foot of a column */
+.page-end {
+  text-align: center;
+  padding: 22px 0 26px;
+  font-size: 22px;
+  color: #b84318;
+  line-height: 1;
+  font-style: normal;
+}
+
+/* ═════════════ EDGE TAP ZONES (page nav by tap on screen edges) ═════════════
+ * Narrow vertical bands on the left/right edges of the BOOK LIST that
+ * navigate to prev/next page. Confined to the list area (via .list-wrap)
+ * so they don't overlap the topbar back button or the alphanav letters.
+ * Plain <a> tags — no JS. Width 28px keeps them out of intentional card
+ * taps. The chevron is faint: visible enough to discover, quiet enough
+ * to ignore.
+ */
+.list-wrap {
+  position: relative;
+}
+.edge-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 28px;
+  z-index: 10;
+  background: transparent;
+  text-decoration: none;
+  outline: none;
+}
+.edge-prev { left: 0; }
+.edge-next { right: 0; }
+.edge-mark {
+  position: absolute;
+  top: 50%;
+  margin-top: -16px;
+  left: 0;
+  width: 28px;
+  height: 32px;
+  line-height: 32px;
+  text-align: center;
+  font-size: 26px;
+  color: #958873;
+  font-style: italic;
+}
 
 /* ═════════════ PAGER (natural block flow, not fixed) ═════════════ */
 table.pager {

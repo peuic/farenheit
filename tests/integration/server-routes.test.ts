@@ -44,9 +44,10 @@ describe("server routes", () => {
       dataDir,
       dbPath: join(dataDir, "test.sqlite"),
       coversDir,
-      mobiCacheDir: join(dataDir, "mobi-cache"),
+      azw3CacheDir: join(dataDir, "azw3-cache"),
       logPath: join(dataDir, "test.log"),
       port: 0,
+      adminPort: 0,
       host: "127.0.0.1",
       ebookConvertPath: null,
       auth: null,
@@ -130,9 +131,9 @@ describe("server routes", () => {
     expect(r.headers.get("content-type")).toBe("image/jpeg");
   });
 
-  test("GET /book/:id/download.mobi → 503 when Calibre isn't configured", async () => {
+  test("GET /book/:id/download.azw3 → 503 when Calibre isn't configured", async () => {
     const first = store.list({})[0]!;
-    const r = await fetch(`${baseUrl}/book/${first.id}/download.mobi`);
+    const r = await fetch(`${baseUrl}/book/${first.id}/download.azw3`);
     expect(r.status).toBe(503);
     expect(await r.text()).toContain("Calibre");
   });

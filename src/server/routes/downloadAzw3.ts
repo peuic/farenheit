@@ -2,11 +2,11 @@ import { join } from "node:path";
 import { existsSync, statSync } from "node:fs";
 import { renderNotFound } from "../templates/notFound";
 import { htmlResponse } from "./home";
-import { convertEpubToMobi } from "../../converter";
+import { convertEpubToAzw3 } from "../../converter";
 import { ensureMaterialized } from "../../indexer/icloud";
 import type { Ctx } from "./context";
 
-export async function handleDownloadMobi(ctx: Ctx, idStr: string): Promise<Response> {
+export async function handleDownloadAzw3(ctx: Ctx, idStr: string): Promise<Response> {
   const id = Number.parseInt(idStr, 10);
   if (Number.isNaN(id)) return htmlResponse(renderNotFound(), 404);
 
@@ -15,7 +15,7 @@ export async function handleDownloadMobi(ctx: Ctx, idStr: string): Promise<Respo
 
   if (!ctx.config.ebookConvertPath) {
     return new Response(
-      "MOBI conversion unavailable — install the Calibre desktop app.",
+      "AZW3 conversion unavailable — install the Calibre desktop app.",
       { status: 503 },
     );
   }
@@ -33,30 +33,30 @@ export async function handleDownloadMobi(ctx: Ctx, idStr: string): Promise<Respo
     }
   }
 
-  // Cache file keyed by id + mtime so an updated epub triggers a fresh MOBI.
-  const mobiName = `${book.id}.${book.mtime}.mobi`;
-  const mobiPath = join(ctx.config.mobiCacheDir, mobiName);
+  // Cache file keyed by id + mtime so an updated epub triggers a fresh AZW3.
+  const azw3Name = `${book.id}.${book.mtime}.azw3`;
+  const azw3Path = join(ctx.config.azw3CacheDir, azw3Name);
 
   try {
-    await convertEpubToMobi(ctx.config.ebookConvertPath, epubPath, mobiPath);
+    await convertEpubToAzw3(ctx.config.ebookConvertPath, epubPath, azw3Path);
   } catch (e) {
-    console.warn(`[mobi] conversion failed for ${book.relPath}: ${(e as Error).message}`);
+    console.warn(`[azw3] conversion failed for ${book.relPath}: ${(e as Error).message}`);
     return new Response(`conversion failed: ${(e as Error).message}`, { status: 500 });
   }
 
   ctx.store.markDownloaded(ctx.deviceId, book.id);
 
   // Kindle's experimental browser only accepts downloads whose Content-
-  // Disposition filename literally ends in .azw / .prc / .mobi — percent-
-  // encoded non-ASCII characters (spaces, accents, parens from Z-Library
-  // filenames) confuse its extension check. Reduce to pure ASCII.
-  const downloadFilename = `${asciiSlug(book.filename.replace(/\.epub$/i, "")) || "book"}.mobi`;
-  const stat = statSync(mobiPath);
+  // Disposition filename literally ends in a recognized extension —
+  // percent-encoded non-ASCII characters confuse its extension check.
+  // Reduce to pure ASCII.
+  const downloadFilename = `${asciiSlug(book.filename.replace(/\.epub$/i, "")) || "book"}.azw3`;
+  const stat = statSync(azw3Path);
   // Read fully into memory — Bun sends chunked when given a file stream.
-  const bytes = await Bun.file(mobiPath).bytes();
+  const bytes = await Bun.file(azw3Path).bytes();
   return new Response(bytes, {
     headers: {
-      "Content-Type": "application/x-mobipocket-ebook",
+      "Content-Type": "application/vnd.amazon.ebook",
       "Content-Disposition": `attachment; filename="${downloadFilename}"`,
       "Last-Modified": new Date(stat.mtimeMs).toUTCString(),
       "Cache-Control": "no-cache",
